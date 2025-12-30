@@ -227,6 +227,38 @@ async def oauth_device_start() -> Dict[str, Any]:
     return device
 
 
+async def generate_one_time_auth_code() -> Dict[str, Any]:
+    """
+    Starts the OAuth device flow and generates a short one-time code that can be
+    shown to users or used by tooling. The one-time code is stored alongside the
+    device flow in `YOTO_DEVICE_PATH` so subsequent polling functions can locate
+    the device_code.
+
+    Returns a dict with `one_time_code`, `verification_uri` and
+    `verification_uri_complete` (when available).
+    """
+    # Start the device flow (this saves the device object already)
+    device = await oauth_device_start()
+
+    # Generate a short, URL-safe code (6 chars is compact but may be adjusted)
+    import secrets
+
+    one_time = secrets.token_urlsafe(6)
+
+    # Persist the one-time code into the saved device flow so other helpers can find it
+    dev = load_device_flow() or {}
+    dev["one_time_code"] = one_time
+    save_device_flow(dev)
+
+    return {
+        "one_time_code": one_time,
+        "verification_uri": dev.get("verification_uri"),
+        "verification_uri_complete": dev.get("verification_uri_complete"),
+        "expires_in": dev.get("expires_in"),
+        "interval": dev.get("interval", 5),
+    }
+
+
 async def oauth_device_poll_once() -> Tuple[bool, Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """
     Returns (authenticated, token_if_authed, meta)

@@ -17,3 +17,13 @@ export async function uploadToYoto(podcastTitle: string, episodes: any[]) {
   const { data } = await api.post("/api/yoto/upload", { podcastTitle, episodes });
   return data;
 }
+
+export async function generateOneTimeCode() {
+  const { data } = await api.post("/api/yoto/auth/generate_one_time", {});
+  return data;
+}
+
+export async function redeemOneTimeCode(code: string) {
+  const { data } = await api.post("/api/yoto/auth/redeem", { one_time_code: code });
+  return data;
+}

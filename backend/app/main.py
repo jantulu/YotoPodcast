@@ -8,7 +8,13 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from .yoto import oauth_device_start, oauth_device_status, oauth_refresh_if_possible
+from .yoto import (
+    oauth_device_start,
+    oauth_device_status,
+    oauth_refresh_if_possible,
+    generate_one_time_auth_code,
+    load_device_flow,
+)
 
 app = FastAPI()
 
@@ -131,6 +137,46 @@ async def yoto_auth_start() -> Dict[str, Any]:
         "device_code": info.device_code,  # UI will POST this back to /poll
         "expires_in": info.expires_in,
         "interval": info.interval,
+    }
+
+
+@app.post("/api/yoto/auth/generate_one_time")
+async def yoto_generate_one_time() -> Dict[str, Any]:
+    """Generates a short one-time code tied to a device flow and returns
+    verification info. The code is stored in the device file so it can be
+    redeemed by a frontend that collects the code from a user.
+    """
+    try:
+        info = await generate_one_time_auth_code()
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/yoto/auth/redeem")
+async def yoto_redeem(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Redeem a one-time code provided by a user/front-end. If the code
+    matches the currently saved device flow, return the verification
+    information and current auth status (frontend can then show the
+    verification URI or poll `/api/yoto/auth/status`).
+    """
+    code = payload.get("one_time_code")
+    if not code:
+        raise HTTPException(status_code=400, detail="one_time_code required")
+
+    dev = load_device_flow()
+    if not dev or dev.get("one_time_code") != code:
+        raise HTTPException(status_code=400, detail="invalid one_time_code")
+
+    # Return verification info plus current auth status
+    status = await oauth_device_status()
+    return {
+        "verification_uri": dev.get("verification_uri"),
+        "verification_uri_complete": dev.get("verification_uri_complete"),
+        "user_code": dev.get("user_code"),
+        "expires_in": dev.get("expires_in"),
+        "interval": dev.get("interval", 5),
+        "status": status,
     }
 
 
