@@ -101,6 +101,7 @@ async def _raise_for_status_with_body(r: httpx.Response) -> None:
 
 async def _sleep(seconds: float) -> None:
     import asyncio
+
     await asyncio.sleep(seconds)
 
 
@@ -122,7 +123,7 @@ async def yoto_authed_client(timeout: float = 60.0) -> httpx.AsyncClient:
 
 
 # ----------------------------
-# OAuth refresh support (THIS FIXES YOUR IMPORT ERROR)
+# OAuth refresh support
 # ----------------------------
 async def oauth_refresh_if_possible() -> Dict[str, Any]:
     """
@@ -151,7 +152,7 @@ async def oauth_refresh_if_possible() -> Dict[str, Any]:
         r = await client.post(url, data=payload)
 
     if r.status_code != 200:
-        # If refresh fails, clear token to force re-auth (optional; but avoids infinite bad token loops)
+        # If refresh fails, clear token to force re-auth (avoids infinite bad token loops)
         try:
             body = r.json()
         except Exception:
@@ -174,6 +175,14 @@ async def oauth_refresh_if_possible() -> Dict[str, Any]:
 # ----------------------------
 # OAuth Device Flow
 # ----------------------------
+def _device_expired(dev: Dict[str, Any]) -> bool:
+    expires_in = int(dev.get("expires_in") or 0)
+    requested_at = int(dev.get("requested_at") or 0)
+    if expires_in and requested_at and (_now() > requested_at + expires_in):
+        return True
+    return False
+
+
 async def oauth_device_start() -> Dict[str, Any]:
     if not YOTO_CLIENT_ID:
         raise RuntimeError("YOTO_CLIENT_ID is not set. Set it in .env / docker compose environment.")
@@ -194,14 +203,21 @@ async def oauth_device_start() -> Dict[str, Any]:
         raise RuntimeError(f"Device start failed: {r.status_code} {body}")
 
     data = r.json()
+
+    interval = int(data.get("interval") or 5)
+    requested_at = _now()
+
     device = {
         "device_code": data.get("device_code") or data.get("deviceCode"),
         "user_code": data.get("user_code") or data.get("userCode"),
         "verification_uri": data.get("verification_uri") or data.get("verificationUri"),
         "verification_uri_complete": data.get("verification_uri_complete") or data.get("verificationUriComplete"),
         "expires_in": int(data.get("expires_in") or 0),
-        "interval": int(data.get("interval") or 5),
-        "requested_at": _now(),
+        "interval": interval,
+        "requested_at": requested_at,
+        # enforce polling interval server-side so UI can't DOS your auth
+        "next_poll_at": requested_at,  # allow immediate first poll
+        "polls": 0,
     }
 
     if not device["device_code"]:
@@ -211,19 +227,31 @@ async def oauth_device_start() -> Dict[str, Any]:
     return device
 
 
-async def oauth_device_poll_once() -> Tuple[bool, Optional[Dict[str, Any]]]:
+async def oauth_device_poll_once() -> Tuple[bool, Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Returns (authenticated, token_if_authed, meta)
+      - meta may include: pending, slow_down, retry_after, error, expired
+    Never raises for normal device-flow states.
+    """
     dev = load_device_flow()
     if not dev:
-        return False, None
+        return False, None, {"missing_device": True}
 
-    expires_in = int(dev.get("expires_in") or 0)
-    requested_at = int(dev.get("requested_at") or 0)
-    if expires_in and requested_at and (_now() > requested_at + expires_in):
+    if _device_expired(dev):
         clear_device_flow()
-        return False, None
+        return False, None, {"expired": True}
 
     if not YOTO_CLIENT_ID:
+        # configuration error *is* fatal
         raise RuntimeError("YOTO_CLIENT_ID is not set.")
+
+    # Enforce interval / backoff
+    now = _now()
+    next_poll_at = int(dev.get("next_poll_at") or 0)
+    interval = int(dev.get("interval") or 5)
+
+    if now < next_poll_at:
+        return False, None, {"pending": True, "retry_after": max(1, next_poll_at - now), "interval": interval}
 
     url = f"{YOTO_LOGIN_BASE}/oauth/token"
     payload = {
@@ -235,32 +263,49 @@ async def oauth_device_poll_once() -> Tuple[bool, Optional[Dict[str, Any]]]:
     async with _client(timeout=30) as client:
         r = await client.post(url, data=payload)
 
+    # update device poll accounting + schedule next allowed poll
+    dev["polls"] = int(dev.get("polls") or 0) + 1
+    dev["next_poll_at"] = now + interval
+    save_device_flow(dev)
+
     if r.status_code == 200:
         tok = r.json()
         expires_in = int(tok.get("expires_in") or 0)
         tok["expires_at"] = _now() + expires_in
         save_token(tok)
         clear_device_flow()
-        return True, tok
+        return True, tok, None
 
-    # Expected pending states
+    # Expected pending states often come as 400/403/429 with JSON body containing "error"
     try:
         body = r.json()
     except Exception:
         body = {"raw": r.text}
 
     err = body.get("error")
-    if r.status_code in (400, 428) and err in (
-        "authorization_pending",
-        "slow_down",
-        "expired_token",
-        "access_denied",
-        "invalid_grant",
-    ):
-        if err in ("expired_token", "access_denied", "invalid_grant"):
-            clear_device_flow()
-        return False, None
+    err_desc = body.get("error_description")
 
+    if err == "authorization_pending":
+        # keep waiting, tell caller when to retry
+        return False, None, {"pending": True, "retry_after": interval, "interval": interval}
+
+    if err == "slow_down":
+        # back off (OAuth spec suggests increasing interval)
+        interval = interval + 5
+        dev["interval"] = interval
+        dev["next_poll_at"] = _now() + interval
+        save_device_flow(dev)
+        return False, None, {"pending": True, "slow_down": True, "retry_after": interval, "interval": interval}
+
+    if err in ("expired_token", "access_denied", "invalid_grant"):
+        clear_device_flow()
+        return False, None, {"pending": False, "error": err, "error_description": err_desc, "terminal": True}
+
+    # Some providers use different codes; if it's any OAuth-ish error, return it cleanly
+    if err:
+        return False, None, {"pending": False, "error": err, "error_description": err_desc, "status": r.status_code}
+
+    # Unknown non-JSON or unexpected response -> keep this fatal so you notice
     raise RuntimeError(f"Device poll failed: {r.status_code} {body}")
 
 
@@ -281,19 +326,33 @@ async def oauth_device_status() -> Dict[str, Any]:
     if not dev:
         return {"authenticated": False}
 
-    # Opportunistic poll
-    authed, tok3 = await oauth_device_poll_once()
+    if _device_expired(dev):
+        clear_device_flow()
+        return {"authenticated": False}
+
+    # Poll once (but safe — doesn't throw for pending/slow_down)
+    authed, tok3, meta = await oauth_device_poll_once()
     if authed and tok3:
         return {"authenticated": True, "expires_at": int(tok3["expires_at"])}
 
+    # pending path: return info so UI can display code + respect retry_after
+    meta = meta or {}
+    dev2 = load_device_flow() or dev
     return {
         "authenticated": False,
-        "pending": True,
-        "verification_uri": dev.get("verification_uri"),
-        "verification_uri_complete": dev.get("verification_uri_complete"),
-        "user_code": dev.get("user_code"),
-        "expires_in": dev.get("expires_in"),
-        "interval": dev.get("interval", 5),
+        "pending": bool(meta.get("pending", True)),
+        "retry_after": int(meta.get("retry_after") or int(dev2.get("interval") or 5)),
+        "interval": int(dev2.get("interval") or 5),
+        "verification_uri": dev2.get("verification_uri"),
+        "verification_uri_complete": dev2.get("verification_uri_complete"),
+        "user_code": dev2.get("user_code"),
+        "expires_in": dev2.get("expires_in"),
+        "polls": int(dev2.get("polls") or 0),
+        # include any non-terminal error details for debugging
+        "error": meta.get("error"),
+        "error_description": meta.get("error_description"),
+        "status": meta.get("status"),
+        "slow_down": bool(meta.get("slow_down", False)),
     }
 
 
