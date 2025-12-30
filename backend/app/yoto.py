@@ -234,15 +234,21 @@ async def _api_request(method: str, path: str, token: Token, **kwargs: Any) -> h
 
 
 async def get_upload_url(filename: str, token: Token) -> dict[str, Any]:
-    # Based on your description:
-    # GET /media/transcode/audio/uploadUrl
     resp = await _api_request(
         "GET",
         "/media/transcode/audio/uploadUrl",
         token,
         params={"filename": filename},
     )
-    resp.raise_for_status()
+
+    if resp.status_code >= 400:
+        # Log body for debugging
+        try:
+            detail = resp.json()
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(f"Yoto uploadUrl failed {resp.status_code}: {detail}")
+
     return resp.json()
 
 
