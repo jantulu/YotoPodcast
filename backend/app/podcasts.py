@@ -8,7 +8,7 @@ import httpx
 
 PODCASTS = [
     {"slug": "99pi", "title": "99% Invisible", "feedUrl": "https://feeds.99percentinvisible.org/99percentinvisible"},
-    {"slug": "circle-round", "title": "Circle Round", "feedUrl": "https://feeds.npr.org/510313/podcast.xml"},
+    {"slug": "circle-round", "title": "Circle Round", "feedUrl": "https://rss.wbur.org/circleround/podcast"},
 ]
 
 # If you want to keep "circle-round has no episodes", set its feedUrl to "" or use STUB_ONLY map below.
@@ -21,7 +21,7 @@ STUB_EPISODES: dict[str, list[dict[str, Any]]] = {
     # "circle-round": []  # intentionally empty -> will 404 in API if slug exists but no episodes
 }
 
-STUB_ONLY = True  # flip to False to enable RSS parsing
+STUB_ONLY = False  # flip to False to enable RSS parsing
 
 
 @dataclass
