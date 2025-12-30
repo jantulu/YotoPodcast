@@ -1,29 +1,33 @@
-import axios from "axios";
+import type { AuthStart, AuthStatus, Podcast, Episode, UploadResult } from "./types";
 
-const baseURL = import.meta.env.VITE_API_BASE || "http://localhost:8000";
-export const api = axios.create({ baseURL });
+const API_BASE =
+  (import.meta as any).env?.VITE_API_BASE ??
+  `${window.location.protocol}//${window.location.hostname}:8001`;
 
-export async function getPodcasts() {
-  const { data } = await api.get("/api/podcasts");
-  return data;
+async function j<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, init);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+  }
+  return res.json() as Promise<T>;
 }
 
-export async function getEpisodes(podcastId: string) {
-  const { data } = await api.get(`/api/podcasts/${podcastId}/episodes`);
-  return data;
-}
+export const api = {
+  health: () => j<{ ok: boolean }>("/api/health"),
 
-export async function uploadToYoto(podcastTitle: string, episodes: any[]) {
-  const { data } = await api.post("/api/yoto/upload", { podcastTitle, episodes });
-  return data;
-}
+  authStart: () => j<AuthStart>("/api/yoto/auth/start", { method: "POST" }),
+  authStatus: () => j<AuthStatus>("/api/yoto/auth/status"),
 
-export async function generateOneTimeCode() {
-  const { data } = await api.post("/api/yoto/auth/generate_one_time", {});
-  return data;
-}
+  podcasts: () => j<Podcast[]>("/api/podcasts"),
+  episodes: (slug: string) => j<Episode[]>(`/api/podcasts/${encodeURIComponent(slug)}/episodes`),
 
-export async function redeemOneTimeCode(code: string) {
-  const { data } = await api.post("/api/yoto/auth/redeem", { one_time_code: code });
-  return data;
-}
+  upload: (audioUrl: string, title: string) =>
+    j<UploadResult>("/api/yoto/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audioUrl, title })
+    })
+};
+
+export { API_BASE };
