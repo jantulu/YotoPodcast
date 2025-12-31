@@ -43,11 +43,20 @@ export const api = {
 
   playlists: {
     getAll: async (accessToken: string): Promise<Playlist[]> => {
-      const response = await fetch(
-        `${API_BASE}/playlists?access_token=${accessToken}`
-      )
-      const data = await response.json()
-      return data.playlists
+      try {
+        const response = await fetch(
+          `${API_BASE}/playlists?access_token=${accessToken}`
+        )
+        if (!response.ok) {
+          console.error('Failed to fetch playlists:', response.status, response.statusText)
+          return []
+        }
+        const data = await response.json()
+        return data.playlists || []
+      } catch (error) {
+        console.error('Error fetching playlists:', error)
+        return []
+      }
     },
 
     getById: async (cardId: string, accessToken: string): Promise<any> => {

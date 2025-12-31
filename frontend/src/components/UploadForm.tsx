@@ -22,9 +22,10 @@ export default function UploadForm({ accessToken }: UploadFormProps) {
   const fetchPlaylists = async () => {
     try {
       const data = await api.playlists.getAll(accessToken)
-      setPlaylists(data)
+      setPlaylists(data || [])
     } catch (error) {
       console.error('Failed to fetch playlists:', error)
+      setPlaylists([])
     }
   }
 
@@ -96,7 +97,7 @@ export default function UploadForm({ accessToken }: UploadFormProps) {
               required={!createNew}
             >
               <option value="">-- Select Playlist --</option>
-              {playlists.map((playlist) => (
+              {playlists && playlists.map((playlist) => (
                 <option key={playlist.cardId} value={playlist.cardId}>
                   {playlist.title}
                 </option>
