@@ -5,9 +5,21 @@ from config import settings
 
 app = FastAPI(title="YotoPodcast API")
 
+# Startup check
+@app.on_event("startup")
+async def startup_event():
+    print("=" * 50)
+    print("YotoPodcast API Starting")
+    print(f"Client ID configured: {settings.YOTO_CLIENT_ID[:10]}..." if settings.YOTO_CLIENT_ID else "Client ID: NOT SET!")
+    print(f"Frontend URL: {settings.FRONTEND_URL}")
+    print("=" * 50)
+    
+    if not settings.YOTO_CLIENT_ID:
+        print("WARNING: YOTO_CLIENT_ID is not set in environment!")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:3000"],
+    allow_origins=[settings.FRONTEND_URL, "http://localhost:3000", "http://office.home.arpa:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

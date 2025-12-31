@@ -14,6 +14,8 @@ async def initiate_device_flow():
     Returns device_code and user_code for the user to authorize.
     """
     try:
+        print(f"Initiating device flow with client_id: {settings.YOTO_CLIENT_ID}")
+        
         response = requests.post(
             "https://login.yotoplay.com/oauth/device/code",
             data={
@@ -24,7 +26,21 @@ async def initiate_device_flow():
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
         
-        response.raise_for_status()
+        print(f"Device code response status: {response.status_code}")
+        print(f"Device code response body: {response.text}")
+        
+        if not response.ok:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = error_json.get("error_description", error_json.get("error", response.text))
+            except:
+                pass
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Device code request failed: {error_detail}"
+            )
+        
         data = response.json()
         
         return DeviceCodeResponse(
@@ -35,9 +51,14 @@ async def initiate_device_flow():
             interval=data.get("interval", 5)
         )
         
-    except requests.exceptions.RequestException as e:
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"Device flow error: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail=f"Device code request failed: {str(e)}"
         )
 
