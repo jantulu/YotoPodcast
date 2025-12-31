@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
@@ -13,6 +15,11 @@ export default defineConfig({
       '.local',
       'office.home.arpa'
     ],
+    // Enable HTTPS if certificates exist
+    https: fs.existsSync(path.resolve(__dirname, 'certs/cert.pem')) ? {
+      key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')),
+    } : undefined,
     proxy: {
       '/api': {
         target: 'http://backend:8000',
