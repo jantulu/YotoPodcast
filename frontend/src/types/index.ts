@@ -12,6 +12,14 @@ export interface TokenResponse {
   refresh_token?: string
 }
 
+export interface DeviceCodeResponse {
+  device_code: string
+  user_code: string
+  verification_uri: string
+  expires_in: number
+  interval: number
+}
+
 export interface UploadResponse {
   success: boolean
   message: string

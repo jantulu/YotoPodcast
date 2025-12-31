@@ -10,6 +10,15 @@ class TokenResponse(BaseModel):
     refresh_token: Optional[str] = None
 
 
+class DeviceCodeResponse(BaseModel):
+    """Device code flow response"""
+    device_code: str
+    user_code: str
+    verification_uri: str
+    expires_in: int
+    interval: int = 5
+
+
 class PlaylistInfo(BaseModel):
     """Basic playlist information"""
     cardId: str

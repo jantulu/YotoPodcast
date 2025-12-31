@@ -1,19 +1,33 @@
-import { Playlist, TokenResponse, UploadResponse } from '../types'
+import { Playlist, TokenResponse, DeviceCodeResponse, UploadResponse } from '../types'
 
 const API_BASE = '/api'
 
 export const api = {
   auth: {
-    getAuthorizeUrl: async (): Promise<{ authorization_url: string }> => {
-      const response = await fetch(`${API_BASE}/auth/authorize`)
+    initiateDeviceFlow: async (): Promise<DeviceCodeResponse> => {
+      const response = await fetch(`${API_BASE}/auth/device/code`, {
+        method: 'POST',
+      })
+      if (!response.ok) throw new Error('Failed to initiate device flow')
       return response.json()
     },
 
-    exchangeToken: async (code: string): Promise<TokenResponse> => {
-      const response = await fetch(`${API_BASE}/auth/token?code=${code}`, {
-        method: 'POST',
-      })
-      if (!response.ok) throw new Error('Token exchange failed')
+    pollDeviceToken: async (deviceCode: string): Promise<TokenResponse | null> => {
+      const response = await fetch(
+        `${API_BASE}/auth/device/token?device_code=${deviceCode}`,
+        { method: 'POST' }
+      )
+      
+      // 202 means still pending
+      if (response.status === 202) {
+        return null
+      }
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Token poll failed')
+      }
+      
       return response.json()
     },
 

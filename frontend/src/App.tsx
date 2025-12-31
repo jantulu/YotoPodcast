@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Login from './components/Login'
-import AuthCallback from './components/AuthCallback'
 import UploadForm from './components/UploadForm'
 import PlaylistManager from './components/PlaylistManager'
 
@@ -48,11 +47,7 @@ function App() {
           <Routes>
             <Route 
               path="/login" 
-              element={accessToken ? <Navigate to="/" /> : <Login />} 
-            />
-            <Route 
-              path="/callback" 
-              element={<AuthCallback onLogin={handleLogin} />} 
+              element={accessToken ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} 
             />
             <Route 
               path="/" 
@@ -74,4 +69,4 @@ function App() {
   )
 }
 
-export default App  
+export default App
