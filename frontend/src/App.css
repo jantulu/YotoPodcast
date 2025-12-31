@@ -370,74 +370,32 @@ body {
   border-left: 4px solid #155724;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .app {
-    padding: 10px;
-  }
-
-  .app-header {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-
-  .app-main {
-    padding: 20px;
-  }
-
-  .playlist-item {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .playlist-actions {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .btn-view,
-  .btn-delete {
-    flex: 1;
-  }
-
-  .radio-group {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .user-code {
-    font-size: 36px;
-    letter-spacing: 4px;
-  }
-  
-  .episode-item {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .btn-upload {
-    width: 100%;
-  }
+/* Podcast Manager Layout */
+.podcast-manager {
+  height: calc(100vh - 180px);
+  overflow: hidden;
 }
 
-/* RSS Feed Styles */
-.feed-info {
-  margin-top: 20px;
+.manager-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 20px;
+  height: 100%;
 }
 
-.feed-info h3 {
-  color: #333;
-  font-size: 22px;
-  margin-bottom: 10px;
+/* Sidebars */
+.feeds-sidebar,
+.playlists-sidebar {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.feed-info > p {
-  color: #666;
-  margin-bottom: 20px;
-}
-
-.episodes-list h4 {
+.feeds-sidebar h3,
+.playlists-sidebar h3 {
   color: #333;
   font-size: 18px;
   margin-bottom: 15px;
@@ -445,63 +403,400 @@ body {
   border-bottom: 2px solid #e0e0e0;
 }
 
-.episode-item {
+/* Add Feed Form */
+.add-feed-form {
+  margin-bottom: 15px;
+}
+
+.feed-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.feed-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.btn-add-feed {
+  width: 100%;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.btn-add-feed:hover {
+  background: #764ba2;
+}
+
+/* Saved Feeds List */
+.saved-feeds-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.feed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
   background: white;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.feed-item:hover {
+  border-color: #667eea;
+}
+
+.feed-item.active {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.feed-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.feed-name {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.btn-delete-feed {
+  background: #ff4757;
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.btn-delete-feed:hover {
+  background: #ee5a6f;
+}
+
+/* Main Content */
+.main-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Upload Controls */
+.upload-controls {
+  background: #f8f9fa;
   padding: 15px;
-  margin-bottom: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  transition: all 0.3s;
+  flex-wrap: wrap;
 }
 
-.episode-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-}
-
-.episode-info {
+.playlist-selection {
+  display: flex;
+  gap: 10px;
+  align-items: center;
   flex: 1;
 }
 
-.episode-info h5 {
-  color: #333;
-  font-size: 16px;
-  margin-bottom: 5px;
+.radio-group-inline {
+  display: flex;
+  gap: 15px;
 }
 
-.episode-meta {
-  color: #999;
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-
-.episode-description {
-  color: #666;
+.radio-group-inline label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: #555;
+  font-weight: 500;
   font-size: 14px;
-  line-height: 1.4;
+  white-space: nowrap;
 }
 
-.btn-upload {
+.playlist-input,
+.playlist-select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.playlist-input:focus,
+.playlist-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.selected-count {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-upload-selected {
   background: #667eea;
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 14px;
   transition: all 0.3s;
   white-space: nowrap;
 }
 
-.btn-upload:hover:not(:disabled) {
+.btn-upload-selected:hover:not(:disabled) {
   background: #764ba2;
 }
 
-.btn-upload:disabled {
+.btn-upload-selected:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+/* Episodes Section */
+.episodes-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.episodes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.episodes-header h3 {
+  color: #333;
+  font-size: 20px;
+  margin: 0;
+}
+
+.episodes-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 200px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.btn-select {
+  background: #e0e0e0;
+  color: #333;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.btn-select:hover {
+  background: #d0d0d0;
+}
+
+/* Episodes List - Compact */
+.episodes-list-compact {
+  flex: 1;
+  overflow-y: auto;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.episode-compact {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.episode-compact:last-child {
+  border-bottom: none;
+}
+
+.episode-compact:hover {
+  background: #f8f9fa;
+}
+
+.episode-compact.selected {
+  background: #f0f4ff;
+}
+
+.episode-checkbox {
+  margin-right: 12px;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.episode-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.episode-title {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.episode-meta {
+  color: #999;
+  font-size: 12px;
+}
+
+/* Playlists List - Compact */
+.playlists-list-compact {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.playlist-compact {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.playlist-compact:hover {
+  border-color: #667eea;
+}
+
+.playlist-title {
+  display: block;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-id {
+  display: block;
+  color: #999;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+/* States */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 16px;
+}
+
+.empty-state-small {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .manager-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  .feeds-sidebar,
+  .playlists-sidebar {
+    max-height: 300px;
+  }
+  
+  .upload-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .playlist-selection {
+    flex-direction: column;
+  }
+  
+  .episodes-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
 }

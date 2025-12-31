@@ -1,9 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Login from './components/Login'
-import UploadForm from './components/UploadForm'
-import PlaylistManager from './components/PlaylistManager'
-import RSSFeedManager from './components/RSSFeedManager'
+import PodcastManager from './components/PodcastManager'
 
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
@@ -36,7 +34,7 @@ function App() {
     <Router>
       <div className="app">
         <header className="app-header">
-          <h1>🎵 YotoPodcast</h1>
+          <h1>🎵 YotoPodcast Manager</h1>
           {accessToken && (
             <button onClick={handleLogout} className="logout-btn">
               Logout
@@ -54,11 +52,7 @@ function App() {
               path="/" 
               element={
                 accessToken ? (
-                  <div className="dashboard">
-                    <RSSFeedManager accessToken={accessToken} onEpisodeUploaded={() => {}} />
-                    <UploadForm accessToken={accessToken} />
-                    <PlaylistManager accessToken={accessToken} />
-                  </div>
+                  <PodcastManager accessToken={accessToken} />
                 ) : (
                   <Navigate to="/login" />
                 )

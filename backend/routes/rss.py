@@ -29,6 +29,7 @@ async def upload_episode_from_feed(
     title: str = Form(...),
     access_token: str = Form(...),
     playlist_card_id: Optional[str] = Form(None),
+    playlist_name: Optional[str] = Form(None),
     chapter_index: int = Form(0)
 ):
     """
@@ -38,11 +39,14 @@ async def upload_episode_from_feed(
         # Download audio from RSS feed
         audio_data = RSSService.download_episode(audio_url)
         
+        # Use playlist_name if provided, otherwise use episode title
+        final_playlist_name = playlist_name if playlist_name else title
+        
         # Upload to Yoto
         yoto = YotoService(access_token)
         result = yoto.upload_podcast_to_playlist(
             audio_file=audio_data,
-            podcast_title=title,
+            podcast_title=final_playlist_name,
             playlist_card_id=playlist_card_id,
             chapter_index=chapter_index,
             track_title=title

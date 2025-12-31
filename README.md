@@ -45,8 +45,8 @@ docker-compose up -d
 
 1. Go to https://yoto.dev
 2. Create a developer account
-3. Register a new application
-4. Copy your Client ID and Client Secret
+3. Register a new application (public, no secret)
+4. Copy your Client ID
 5. Set the redirect URI to `http://localhost:3000/callback`
 
 ### Environment Variables
@@ -54,7 +54,6 @@ docker-compose up -d
 Edit `.env` file with your credentials:
 ```bash
 YOTO_CLIENT_ID=your_client_id_here
-YOTO_CLIENT_SECRET=your_client_secret_here
 YOTO_REDIRECT_URI=http://localhost:3000/callback
 ```
 
@@ -112,24 +111,3 @@ cd frontend
 npm install
 npm run dev
 ```
-
-## Project Structure
-
-YotoPodcast/
-├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── config.py            # Configuration settings
-│   ├── services/
-│   │   └── yoto_service.py  # Yoto API integration
-│   ├── routes/
-│   │   ├── auth.py          # Authentication endpoints
-│   │   ├── upload.py        # Upload endpoints
-│   │   └── playlists.py     # Playlist management
-│   └── models/
-│       └── schemas.py       # Pydantic models
-├── frontend/
-│   └── src/
-│       ├── components/      # React components
-│       ├── services/        # API service layer
-│       └── types/           # TypeScript types
-└── docker-compose.yml
