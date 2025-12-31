@@ -6,7 +6,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
-    allowedHosts: true,
+    strictPort: false,
+    allowedHosts: [
+      'localhost',
+      '.home.arpa',
+      '.local',
+      'office.home.arpa'
+    ],
     proxy: {
       '/api': {
         target: 'http://backend:8000',
