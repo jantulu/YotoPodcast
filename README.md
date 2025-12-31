@@ -114,6 +114,7 @@ npm run dev
 ```
 
 ## Project Structure
+
 YotoPodcast/
 ├── backend/
 │   ├── main.py              # FastAPI application
@@ -132,55 +133,3 @@ YotoPodcast/
 │       ├── services/        # API service layer
 │       └── types/           # TypeScript types
 └── docker-compose.yml
-
-## Troubleshooting
-
-### Upload fails with permission error
-- Make sure you're logged in with a valid access token
-- Check that your Yoto API credentials are correct
-- Verify the audio file is a supported format (MP3, M4A, WAV)
-
-### Playlist not updating
-- The key fix: Make sure `cardId` is included in the request body when updating
-- Check the backend logs for detailed error messages
-
-### Authentication issues
-- Verify your redirect URI matches exactly in Yoto developer settings
-- Check that CLIENT_ID and CLIENT_SECRET are correct in `.env`
-
-## Key Implementation Details
-
-### The Fix: Updating Existing Playlists
-
-The critical fix for updating existing playlists is including the `cardId` in the request body:
-```python
-def update_existing_playlist(self, card_id: str, title: str, chapters: List[Dict[str, Any]]):
-    content = {
-        "cardId": card_id,  # THIS IS CRITICAL!
-        "title": title,
-        "content": {
-            "chapters": chapters,
-            "config": {"resumeTimeout": 2592000},
-            "playbackType": "linear"
-        }
-    }
-    response = requests.post(f"{self.BASE_URL}/content", headers=self.headers, json=content)
-    return response.json()
-```
-
-Without `cardId`, the API creates a new playlist instead of updating the existing one.
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
-
-## License
-
-MIT License - feel free to use this project however you'd like!
-
-## Credits
-
-Built with:
-- [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
-- [React](https://react.dev/) - Frontend framework
-- [Yoto API](https://yoto.dev/) - Audio content platform

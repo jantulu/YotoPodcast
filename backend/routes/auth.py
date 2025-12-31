@@ -15,10 +15,11 @@ async def initiate_device_flow():
     """
     try:
         response = requests.post(
-            f"{settings.YOTO_API_BASE_URL}/oauth/device/code",
+            "https://login.yotoplay.com/oauth/device/code",
             data={
                 "client_id": settings.YOTO_CLIENT_ID,
-                "scope": "library.read library.write"
+                "scope": "profile offline_access",
+                "audience": "https://api.yotoplay.com"
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
@@ -29,8 +30,8 @@ async def initiate_device_flow():
         return DeviceCodeResponse(
             device_code=data["device_code"],
             user_code=data["user_code"],
-            verification_uri=data["verification_uri"],
-            expires_in=data["expires_in"],
+            verification_uri=data.get("verification_uri_complete", data["verification_uri"]),
+            expires_in=data.get("expires_in", 300),
             interval=data.get("interval", 5)
         )
         
@@ -49,18 +50,18 @@ async def poll_device_token(device_code: str = Query(...)):
     """
     try:
         response = requests.post(
-            settings.YOTO_TOKEN_URL,
+            "https://login.yotoplay.com/oauth/token",
             data={
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                 "device_code": device_code,
                 "client_id": settings.YOTO_CLIENT_ID,
-                "client_secret": settings.YOTO_CLIENT_SECRET,
+                "audience": "https://api.yotoplay.com"
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
         
         # Handle pending authorization
-        if response.status_code == 400:
+        if response.status_code == 403:
             error_data = response.json()
             error_code = error_data.get("error")
             
@@ -104,12 +105,11 @@ async def refresh_token(refresh_token: str = Query(...)):
     """Refresh an expired access token"""
     try:
         response = requests.post(
-            settings.YOTO_TOKEN_URL,
+            "https://login.yotoplay.com/oauth/token",
             data={
                 "grant_type": "refresh_token",
-                "refresh_token": refresh_token,
                 "client_id": settings.YOTO_CLIENT_ID,
-                "client_secret": settings.YOTO_CLIENT_SECRET,
+                "refresh_token": refresh_token,
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
