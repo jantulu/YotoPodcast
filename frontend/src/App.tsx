@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Login from './components/Login'
 import UploadForm from './components/UploadForm'
 import PlaylistManager from './components/PlaylistManager'
+import RSSFeedManager from './components/RSSFeedManager'
 
 function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
@@ -54,6 +55,7 @@ function App() {
               element={
                 accessToken ? (
                   <div className="dashboard">
+                    <RSSFeedManager accessToken={accessToken} onEpisodeUploaded={() => {}} />
                     <UploadForm accessToken={accessToken} />
                     <PlaylistManager accessToken={accessToken} />
                   </div>

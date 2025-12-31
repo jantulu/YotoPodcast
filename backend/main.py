@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth, upload, playlists
+from routes import auth, upload, playlists, rss
 from config import settings
 
 app = FastAPI(title="YotoPodcast API")
@@ -16,6 +16,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
 app.include_router(playlists.router, prefix="/api/playlists", tags=["Playlists"])
+app.include_router(rss.router, prefix="/api/rss", tags=["RSS Feeds"])
 
 @app.get("/")
 async def root():

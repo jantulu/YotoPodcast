@@ -410,4 +410,98 @@ body {
     font-size: 36px;
     letter-spacing: 4px;
   }
+  
+  .episode-item {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .btn-upload {
+    width: 100%;
+  }
+}
+
+/* RSS Feed Styles */
+.feed-info {
+  margin-top: 20px;
+}
+
+.feed-info h3 {
+  color: #333;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.feed-info > p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.episodes-list h4 {
+  color: #333;
+  font-size: 18px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.episode-item {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s;
+}
+
+.episode-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.episode-info {
+  flex: 1;
+}
+
+.episode-info h5 {
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.episode-meta {
+  color: #999;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.episode-description {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.btn-upload {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btn-upload:hover:not(:disabled) {
+  background: #764ba2;
+}
+
+.btn-upload:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }

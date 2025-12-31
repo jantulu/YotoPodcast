@@ -27,6 +27,9 @@ async def get_playlists(access_token: str = Query(...)):
             playlists=playlist_infos
         )
     except Exception as e:
+        import traceback
+        print(f"Error fetching playlists: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
