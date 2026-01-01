@@ -30,7 +30,11 @@ class YotoService:
             headers=self.headers
         )
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            # Normalize responses that wrap the playlist in a top-level "card" key
+            if isinstance(data, dict) and "card" in data:
+                return data["card"]
+            return data
         return None
     
     def delete_playlist(self, card_id: str) -> bool:
