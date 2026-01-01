@@ -44,6 +44,9 @@ async def upload_episode_from_feed(
         
         # Upload to Yoto
         yoto = YotoService(access_token)
+        # Log whether we're creating a new playlist or adding to existing
+        print(f"upload_episode_from_feed: playlist_card_id={playlist_card_id}, playlist_name={playlist_name}")
+
         result = yoto.upload_podcast_to_playlist(
             audio_file=audio_data,
             podcast_title=final_playlist_name,
@@ -52,6 +55,9 @@ async def upload_episode_from_feed(
             track_title=title
         )
         
+        # Log raw result for debugging
+        print("upload_episode_from_feed: yoto result:", result)
+
         # Extract cardId from different possible locations in response
         card_id = None
         if "card" in result:

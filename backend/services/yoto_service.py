@@ -174,6 +174,14 @@ class YotoService:
         playlist = self.get_playlist_by_id(card_id)
         if not playlist:
             raise ValueError(f"Playlist with cardId {card_id} not found")
+
+        # Debug logging: show playlist structure before modification
+        try:
+            print(f"add_track_to_playlist: fetched playlist cardId={card_id} title={playlist.get('title')}")
+            chapters_debug = playlist.get("content", {}).get("chapters", [])
+            print(f"add_track_to_playlist: existing chapters count={len(chapters_debug)}")
+        except Exception:
+            print("add_track_to_playlist: failed to log playlist debug info")
         
         chapters = playlist.get("content", {}).get("chapters", [])
         
@@ -200,12 +208,18 @@ class YotoService:
         chapters[chapter_index]["tracks"].append(new_track)
         
         # Update the playlist
-        return self.update_existing_playlist(
+        updated = self.update_existing_playlist(
             card_id=card_id,
             title=playlist.get("title", ""),
             chapters=chapters,
             metadata=playlist.get("metadata")
         )
+        # Debug logging: show result cardId if present
+        try:
+            print(f"add_track_to_playlist: update result keys={list(updated.keys())}")
+        except Exception:
+            print("add_track_to_playlist: failed to log update result")
+        return updated
     
     def upload_podcast_to_playlist(
         self,

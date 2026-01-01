@@ -1,113 +1,84 @@
 # YotoPodcast
 
-A web application for uploading podcast episodes to Yoto playlists.
+Web UI and API to upload podcast episodes to Yoto playlists.
 
-## Features
+## Highlights
 
-- 🔐 OAuth authentication with Yoto
-- 📤 Upload audio files to new or existing playlists
-- 📋 View and manage your Yoto playlists
-- 🎵 Automatic audio transcoding
-- 🐳 Docker support for easy deployment
+- OAuth device flow for Yoto
+- Upload episodes to new or existing playlists
+- Small file-backed persistence suitable for local/dev use
+- Docker Compose for easy start-up
 
-## Prerequisites
+## Quick Start (recommended: Docker)
 
-- Docker and Docker Compose
-- Yoto Developer Account (get credentials at https://yoto.dev)
+1. Clone the repo:
 
-## Quick Start
-
-1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/YotoPodcast.git
+git clone https://github.com/Jantulu/YotoPodcast.git
 cd YotoPodcast
 ```
 
-2. **Set up environment variables**
+2. Copy and edit environment variables:
+
 ```bash
 cp .env.example .env
-# Edit .env and add your Yoto credentials
+# Edit .env and add YOTO_CLIENT_ID and other values
 ```
 
-3. **Start the application**
+3. Start with Docker Compose:
+
 ```bash
 docker-compose up -d
 ```
 
-4. **Access the application**
+When using Docker Compose the services are exposed as:
+
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+- Backend API: http://localhost:8000 (API docs: http://localhost:8000/docs)
 
-## Configuration
+## Running Locally (no Docker)
 
-### Getting Yoto API Credentials
+Backend (FastAPI / Uvicorn):
 
-1. Go to https://yoto.dev
-2. Create a developer account
-3. Register a new application (public, no secret)
-4. Copy your Client ID
-5. Set the redirect URI to `http://localhost:3000/callback`
-
-### Environment Variables
-
-Edit `.env` file with your credentials:
-```bash
-YOTO_CLIENT_ID=your_client_id_here
-YOTO_REDIRECT_URI=http://localhost:3000/callback
-```
-
-## Usage
-
-### Uploading Podcasts
-
-1. **Login** with your Yoto account
-2. **Choose upload mode**:
-   - Create new playlist: Upload will create a new playlist
-   - Add to existing: Select from your existing playlists
-3. **Enter episode title** and **select audio file**
-4. **Click Upload** - the app will:
-   - Upload your audio file
-   - Wait for Yoto to transcode it
-   - Add it to the selected playlist
-
-### Managing Playlists
-
-- View all your playlists in the playlist manager
-- Click "View" to see playlist details
-- Click "Delete" to remove a playlist
-
-## API Endpoints
-
-### Authentication
-- `GET /api/auth/authorize` - Get OAuth authorization URL
-- `POST /api/auth/token` - Exchange authorization code for access token
-- `POST /api/auth/refresh` - Refresh access token
-
-### Playlists
-- `GET /api/playlists` - Get all user playlists
-- `GET /api/playlists/{cardId}` - Get specific playlist
-- `DELETE /api/playlists/{cardId}` - Delete playlist
-
-### Upload
-- `POST /api/upload` - Upload podcast episode
-
-## Development
-
-### Running Locally (without Docker)
-
-**Backend:**
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload
+# Run (default port 8000)
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Frontend:**
+Frontend (Vite + React):
+
 ```bash
 cd frontend
 npm install
+# Vite dev server (defaults to 5173)
 npm run dev
 ```
+
+Notes for local frontend/backend pairing:
+- If the frontend dev server runs on a different port, set the frontend URL and API host accordingly. The backend's default `FRONTEND_URL` is `http://localhost:3000`; update `.env` if needed.
+- The frontend may require `VITE_API_URL` or similar environment variables when running locally — set it to your backend (e.g., `http://localhost:8000`).
+
+## Environment vars
+
+Copy `.env.example` to `.env` and set at minimum:
+
+- `YOTO_CLIENT_ID` — your Yoto developer client id
+- `FRONTEND_URL` — URL where the frontend is served (used for CORS)
+
+Other values (token URLs, API base) default to production endpoints and normally don't need changes.
+
+## API (summary)
+
+- `GET /api/auth/status` — check auth status
+- `POST /api/yoto/auth/start` — start device auth flow
+- `GET /api/playlists` — list playlists
+- `POST /api/rss/feeds/upload-episode` — upload by `audio_url` to Yoto
+
+For full routes, open the backend API docs at `/docs` when the backend is running.
+
+
