@@ -52,10 +52,18 @@ async def upload_episode_from_feed(
             track_title=title
         )
         
+        # Extract cardId from different possible locations in response
+        card_id = None
+        if "card" in result:
+            card_id = result["card"].get("cardId")
+        elif "cardId" in result:
+            card_id = result["cardId"]
+        
         return {
             "success": True,
             "message": "Episode uploaded successfully",
-            "cardId": result.get("card", {}).get("cardId"),
+            "cardId": card_id,
+            "playlistId": card_id,  # Also return as playlistId for clarity
             "data": result
         }
         

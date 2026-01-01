@@ -17,7 +17,7 @@ class YotoService:
     def get_user_playlists(self) -> List[Dict[str, Any]]:
         """Fetch all user's MYO playlists"""
         response = requests.get(
-            f"{self.BASE_URL}/content/mine",
+            f"{self.BASE_URL}/content/myo",
             headers=self.headers
         )
         response.raise_for_status()
@@ -226,7 +226,7 @@ class YotoService:
             track_title: Title for the individual track (defaults to podcast_title)
         
         Returns:
-            The updated or created playlist data
+            The updated or created playlist data with cardId
         """
         track_title = track_title or podcast_title
         
@@ -248,7 +248,7 @@ class YotoService:
         
         # Step 5: Either update existing playlist or create new one
         if playlist_card_id:
-            return self.add_track_to_playlist(playlist_card_id, chapter_index, track)
+            result = self.add_track_to_playlist(playlist_card_id, chapter_index, track)
         else:
             chapter = {
                 "key": "01",
@@ -269,8 +269,14 @@ class YotoService:
                 }
             }
             
-            return self.create_new_playlist(
+            result = self.create_new_playlist(
                 title=podcast_title,
                 chapters=[chapter],
                 metadata=metadata
             )
+        
+        # Ensure cardId is at top level of response
+        if "card" in result and "cardId" in result["card"]:
+            result["cardId"] = result["card"]["cardId"]
+        
+        return result

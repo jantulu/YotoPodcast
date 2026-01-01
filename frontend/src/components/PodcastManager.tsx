@@ -33,6 +33,7 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
   const [selectedEpisodes, setSelectedEpisodes] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 })
   const [playlistName, setPlaylistName] = useState('')
   const [useExistingPlaylist, setUseExistingPlaylist] = useState(false)
   const [existingPlaylists, setExistingPlaylists] = useState<any[]>([])
@@ -154,13 +155,23 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
 
     setUploading(true)
     setMessage(null)
+    setUploadProgress({ current: 0, total: episodes.length })
 
     const episodes = currentFeed?.episodes.filter(e => selectedEpisodes.has(e.audio_url)) || []
     let successCount = 0
     let failCount = 0
     let currentPlaylistId = useExistingPlaylist ? selectedPlaylistId : null
 
-    for (const episode of episodes) {
+    console.log(`Starting upload of ${episodes.length} episodes`)
+    console.log(`Using existing playlist: ${useExistingPlaylist}`)
+    console.log(`Current playlist ID: ${currentPlaylistId}`)
+    console.log(`Playlist name: ${playlistName}`)
+
+    for (let i = 0; i < episodes.length; i++) {
+      const episode = episodes[i]
+      setUploadProgress({ current: i + 1, total: episodes.length })
+      console.log(`\n--- Uploading episode ${i + 1}/${episodes.length}: ${episode.title} ---`)
+      
       try {
         const formData = new FormData()
         formData.append('audio_url', episode.audio_url)
@@ -168,8 +179,10 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
         formData.append('access_token', accessToken)
         
         if (currentPlaylistId) {
+          console.log(`Adding to existing playlist: ${currentPlaylistId}`)
           formData.append('playlist_card_id', currentPlaylistId)
         } else if (!useExistingPlaylist && playlistName) {
+          console.log(`Creating new playlist with name: ${playlistName}`)
           formData.append('playlist_name', playlistName)
         }
 
@@ -178,18 +191,29 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
           body: formData,
         })
 
-        if (!response.ok) throw new Error('Upload failed')
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`Upload failed: ${errorText}`)
+          throw new Error(`Upload failed: ${response.status}`)
+        }
         
         const result = await response.json()
+        console.log('Upload response:', result)
+        
+        // Extract playlist ID from response
+        const newPlaylistId = result.playlistId || result.cardId
+        console.log(`Extracted playlist ID: ${newPlaylistId}`)
         
         // Use the returned playlist ID for subsequent uploads
-        if (!currentPlaylistId && result.cardId) {
-          currentPlaylistId = result.cardId
+        if (!currentPlaylistId && newPlaylistId) {
+          currentPlaylistId = newPlaylistId
+          console.log(`Set current playlist ID to: ${currentPlaylistId}`)
         }
         
         successCount++
+        console.log(`✓ Episode ${i + 1} uploaded successfully`)
       } catch (error) {
-        console.error(`Failed to upload ${episode.title}:`, error)
+        console.error(`✗ Failed to upload episode ${i + 1}:`, error)
         failCount++
       }
     }
@@ -198,7 +222,7 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
     setSelectedEpisodes(new Set())
     
     if (failCount === 0) {
-      setMessage({ type: 'success', text: `Successfully uploaded ${successCount} episode(s)!` })
+      setMessage({ type: 'success', text: `Successfully uploaded ${successCount} episode(s) to playlist!` })
     } else {
       setMessage({ type: 'error', text: `Uploaded ${successCount}, failed ${failCount}` })
     }
@@ -339,7 +363,10 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
                     disabled={uploading || selectedEpisodes.size === 0}
                     className="btn-upload-selected"
                   >
-                    {uploading ? 'Uploading...' : `Upload ${selectedEpisodes.size} Episode(s)`}
+                    {uploading 
+                      ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...` 
+                      : `Upload ${selectedEpisodes.size} Episode(s)`
+                    }
                   </button>
                 </div>
               </div>
