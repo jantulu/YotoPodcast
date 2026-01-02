@@ -21,7 +21,15 @@ class YotoService:
             headers=self.headers
         )
         response.raise_for_status()
-        return response.json().get("cards", [])
+        cards = response.json().get("cards", [])
+        # Normalize entries that may be wrapped in a top-level 'card' key
+        normalized = []
+        for c in cards:
+            if isinstance(c, dict) and "card" in c and isinstance(c["card"], dict):
+                normalized.append(c["card"])
+            else:
+                normalized.append(c)
+        return normalized
     
     def get_playlist_by_id(self, card_id: str) -> Optional[Dict[str, Any]]:
         """Fetch a specific playlist by cardId"""

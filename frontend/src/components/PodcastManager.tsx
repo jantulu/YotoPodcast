@@ -342,8 +342,11 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
                     <select
                       value={selectedPlaylistId}
                       onChange={(e) => {
-                        setSelectedPlaylistId(e.target.value)
+                        const val = e.target.value
+                        setSelectedPlaylistId(val)
                         setUseExistingPlaylist(true)
+                        const found = existingPlaylists.find(p => p.cardId === val)
+                        if (found) setPlaylistName(found.title || '')
                       }}
                       className="playlist-select"
                     >
