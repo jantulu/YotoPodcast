@@ -1,375 +1,3 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-}
-
-.app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: white;
-  padding: 20px 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
-}
-
-.app-header h1 {
-  color: #667eea;
-  font-size: 28px;
-}
-
-.logout-btn {
-  background: #ff4757;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.3s;
-}
-
-.logout-btn:hover {
-  background: #ee5a6f;
-}
-
-.app-main {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  font-size: 24px;
-  color: white;
-}
-
-.dashboard {
-  display: grid;
-  gap: 30px;
-}
-
-/* Login Page */
-.login-container {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.login-container h2 {
-  color: #333;
-  margin-bottom: 20px;
-  font-size: 32px;
-}
-
-.login-container p {
-  color: #666;
-  margin-bottom: 30px;
-  font-size: 18px;
-}
-
-.login-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 15px 40px;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.login-btn:hover:not(:disabled) {
-  background: #764ba2;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
-}
-
-.login-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-/* Device Code Flow */
-.device-code-box {
-  background: #f8f9fa;
-  padding: 30px;
-  border-radius: 12px;
-  margin: 30px 0;
-  border: 2px solid #667eea;
-}
-
-.instruction {
-  color: #555;
-  font-size: 16px;
-  margin-bottom: 10px;
-}
-
-.verification-link {
-  display: inline-block;
-  color: #667eea;
-  font-size: 20px;
-  font-weight: 600;
-  text-decoration: none;
-  padding: 10px 20px;
-  background: white;
-  border-radius: 6px;
-  transition: all 0.3s;
-}
-
-.verification-link:hover {
-  background: #667eea;
-  color: white;
-}
-
-.user-code {
-  font-size: 48px;
-  font-weight: bold;
-  color: #667eea;
-  letter-spacing: 8px;
-  margin: 20px 0;
-  font-family: 'Courier New', monospace;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.waiting-text {
-  color: #666;
-  font-size: 18px;
-  margin-top: 20px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.cancel-btn {
-  background: #e0e0e0;
-  color: #333;
-  border: none;
-  padding: 10px 30px;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.cancel-btn:hover {
-  background: #d0d0d0;
-}
-
-/* Auth Callback */
-.auth-callback {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-/* Form Styles */
-.form-container {
-  background: #f8f9fa;
-  padding: 30px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-.form-container h2 {
-  color: #333;
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555;
-  font-weight: 500;
-}
-
-.form-group input[type="text"],
-.form-group input[type="file"],
-.form-group select {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 16px;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.radio-group {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  padding: 15px;
-  background: white;
-  border-radius: 8px;
-}
-
-.radio-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: #555;
-  font-weight: 500;
-}
-
-.radio-group input[type="radio"] {
-  cursor: pointer;
-}
-
-.submit-btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  width: 100%;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background: #764ba2;
-  transform: translateY(-1px);
-}
-
-.submit-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Playlist Manager */
-.playlist-list {
-  display: grid;
-  gap: 15px;
-}
-
-.playlist-item {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s;
-}
-
-.playlist-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.playlist-info h3 {
-  color: #333;
-  margin-bottom: 5px;
-  font-size: 18px;
-}
-
-.playlist-info p {
-  color: #666;
-  font-size: 14px;
-}
-
-.playlist-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-view,
-.btn-delete {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s;
-  font-size: 14px;
-}
-
-.btn-view {
-  background: #667eea;
-  color: white;
-}
-
-.btn-view:hover {
-  background: #764ba2;
-}
-
-.btn-delete {
-  background: #ff4757;
-  color: white;
-}
-
-.btn-delete:hover {
-  background: #ee5a6f;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #999;
-  font-size: 16px;
-}
-
-.error-message {
-  background: #ffe0e0;
-  color: #d8000c;
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  border-left: 4px solid #d8000c;
-}
-
-.success-message {
-  background: #d4edda;
-  color: #155724;
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  border-left: 4px solid #155724;
-}
-
 /* Base Styles */
 * {
   margin: 0;
@@ -506,6 +134,7 @@ body {
   background: white;
   border-radius: 6px;
   transition: all 0.3s;
+  word-break: break-all;
 }
 
 .verification-link:hover {
@@ -560,7 +189,7 @@ body {
 
 .manager-layout {
   display: grid;
-  grid-template-columns: 250px 1fr 250px;
+  grid-template-columns: 280px 1fr 280px;
   gap: 10px;
   height: 100%;
 }
@@ -979,7 +608,11 @@ body {
   font-size: 13px;
 }
 
-/* Mobile Responsive */
+/* ========================================
+   MOBILE RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablets and smaller desktops */
 @media (max-width: 1024px) {
   .manager-layout {
     grid-template-columns: 1fr;
@@ -997,6 +630,7 @@ body {
   }
 }
 
+/* Mobile devices */
 @media (max-width: 768px) {
   .app {
     padding: 5px;
@@ -1017,7 +651,7 @@ body {
   }
   
   .podcast-manager {
-    height: calc(100vh - 110px);
+    height: calc(100vh - 140px);
   }
   
   .manager-layout {
@@ -1077,6 +711,7 @@ body {
   
   .search-input {
     width: 100%;
+    min-width: 100%;
   }
   
   .btn-select {
@@ -1097,9 +732,26 @@ body {
     letter-spacing: 3px;
     padding: 12px;
   }
+  
+  .login-container {
+    padding: 30px 15px;
+  }
+  
+  .device-code-box {
+    padding: 15px;
+  }
 }
 
+/* Small mobile devices */
 @media (max-width: 480px) {
+  .app {
+    padding: 3px;
+  }
+  
+  .app-header {
+    padding: 10px 12px;
+  }
+  
   .app-header h1 {
     font-size: 16px;
   }
@@ -1109,417 +761,235 @@ body {
     font-size: 13px;
   }
   
+  .app-main {
+    padding: 6px;
+  }
+  
+  .podcast-manager {
+    height: calc(100vh - 130px);
+  }
+  
+  .feeds-sidebar,
+  .playlists-sidebar {
+    padding: 10px;
+    max-height: 180px;
+  }
+  
+  .feeds-sidebar h3,
+  .playlists-sidebar h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  .main-content {
+    padding: 10px;
+  }
+  
+  .upload-controls {
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .radio-group-inline {
+    gap: 10px;
+  }
+  
+  .radio-group-inline label {
+    font-size: 12px;
+  }
+  
+  .playlist-input,
+  .playlist-select {
+    font-size: 12px;
+    padding: 6px;
+  }
+  
+  .btn-upload-selected {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .selected-count {
+    font-size: 12px;
+  }
+  
   .episodes-header h3 {
     font-size: 15px;
+  }
+  
+  .episodes-controls {
+    gap: 6px;
+  }
+  
+  .search-input {
+    font-size: 12px;
+    padding: 6px;
+  }
+  
+  .btn-select {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  
+  .episode-compact {
+    padding: 10px 8px;
+  }
+  
+  .episode-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
   }
   
   .episode-title {
     font-size: 13px;
   }
   
+  .episode-meta {
+    font-size: 10px;
+  }
+  
   .feed-name,
   .playlist-title {
     font-size: 12px;
   }
+  
+  .playlist-id {
+    font-size: 9px;
+  }
+  
+  .feed-input,
+  .btn-add-feed {
+    font-size: 12px;
+  }
+  
+  .btn-delete-feed {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+  }
+  
+  .login-container h2 {
+    font-size: 20px;
+  }
+  
+  .login-container p {
+    font-size: 14px;
+  }
+  
+  .login-btn {
+    font-size: 14px;
+    padding: 10px 24px;
+  }
+  
+  .user-code {
+    font-size: 24px;
+    letter-spacing: 2px;
+    padding: 10px;
+  }
+  
+  .verification-link {
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+  
+  .instruction {
+    font-size: 13px;
+  }
+  
+  .waiting-text {
+    font-size: 14px;
+  }
 }
 
-.podcast-manager {
-height: calc(100vh - 180px);
-overflow: hidden;
+/* Extra small devices (very small phones) */
+@media (max-width: 360px) {
+  .app-header h1 {
+    font-size: 14px;
+  }
+  
+  .logout-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  
+  .podcast-manager {
+    height: calc(100vh - 120px);
+  }
+  
+  .user-code {
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+  
+  .radio-group-inline {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
 }
 
-.manager-layout {
-display: grid;
-grid-template-columns: 280px 1fr 280px;
-gap: 20px;
-height: 100%;
+/* Landscape mode on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .podcast-manager {
+    height: calc(100vh - 100px);
+  }
+  
+  .feeds-sidebar,
+  .playlists-sidebar {
+    max-height: 150px;
+  }
+  
+  .app-header {
+    flex-direction: row;
+    padding: 8px 12px;
+  }
+  
+  .episodes-header {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .episodes-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    min-width: 120px;
+    width: auto;
+  }
+  
+  .btn-select {
+    width: auto;
+  }
 }
 
-/* Sidebars */
-.feeds-sidebar,
-.playlists-sidebar {
-background: #f8f9fa;
-border-radius: 12px;
-padding: 20px;
-overflow-y: auto;
-display: flex;
-flex-direction: column;
-}
-
-.feeds-sidebar h3,
-.playlists-sidebar h3 {
-color: #333;
-font-size: 18px;
-margin-bottom: 15px;
-padding-bottom: 10px;
-border-bottom: 2px solid #e0e0e0;
-}
-
-/* Add Feed Form */
-.add-feed-form {
-margin-bottom: 15px;
-}
-
-.feed-input {
-width: 100%;
-padding: 8px;
-margin-bottom: 8px;
-border: 2px solid #e0e0e0;
-border-radius: 6px;
-font-size: 14px;
-}
-
-.feed-input:focus { outline: none; border-color: #667eea; }
-
-.btn-add-feed {
-width: 100%;
-background: #667eea;
-color: white;
-border: none;
-padding: 10px;
-border-radius: 6px;
-cursor: pointer;
-font-weight: 600;
-font-size: 14px;
-transition: background 0.3s;
-}
-
-.btn-add-feed:hover { background: #764ba2; }
-
-/* Saved Feeds List */
-.saved-feeds-list {
-flex: 1;
-overflow-y: auto;
-}
-
-.feed-item {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 10px;
-margin-bottom: 8px;
-background: white;
-border: 2px solid #e0e0e0;
-border-radius: 6px;
-cursor: pointer;
-transition: all 0.3s;
-}
-
-.feed-item:hover { border-color: #667eea; }
-
-.feed-item.active {
-border-color: #667eea;
-background: #f0f4ff;
-}
-
-.feed-info {
-flex: 1;
-overflow: hidden;
-}
-
-.feed-name {
-font-weight: 500;
-color: #333;
-font-size: 14px;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-display: block;
-}
-
-.btn-delete-feed {
-background: #ff4757;
-color: white;
-border: none;
-width: 24px;
-height: 24px;
-border-radius: 50%;
-cursor: pointer;
-font-size: 18px;
-line-height: 1;
-transition: background 0.3s;
-flex-shrink: 0;
-}
-
-.btn-delete-feed:hover { background: #ee5a6f; }
-
-/* Main Content */
-.main-content {
-background: white;
-border-radius: 12px;
-padding: 20px;
-overflow-y: auto;
-display: flex;
-flex-direction: column;
-}
-
-/* Upload Controls */
-.upload-controls {
-background: #f8f9fa;
-padding: 15px;
-border-radius: 8px;
-margin-bottom: 20px;
-display: flex;
-justify-content: space-between;
-align-items: center;
-gap: 15px;
-flex-wrap: wrap;
-}
-
-.playlist-selection {
-display: flex;
-gap: 10px;
-align-items: center;
-flex: 1;
-}
-
-.radio-group-inline {
-display: flex;
-gap: 15px;
-}
-
-.radio-group-inline label {
-display: flex;
-align-items: center;
-gap: 5px;
-cursor: pointer;
-color: #555;
-font-weight: 500;
-font-size: 14px;
-white-space: nowrap;
-}
-
-.playlist-input,
-.playlist-select {
-flex: 1;
-padding: 8px 12px;
-border: 2px solid #e0e0e0;
-border-radius: 6px;
-font-size: 14px;
-}
-
-.playlist-input:focus, .playlist-select:focus { outline: none; border-color: #667eea; }
-
-.upload-actions {
-display: flex;
-gap: 10px;
-align-items: center;
-}
-
-.selected-count {
-color: #667eea;
-font-weight: 600;
-font-size: 14px;
-}
-
-.btn-upload-selected {
-background: #667eea;
-color: white;
-border: none;
-padding: 10px 20px;
-border-radius: 6px;
-cursor: pointer;
-font-weight: 600;
-font-size: 14px;
-transition: all 0.3s;
-white-space: nowrap;
-}
-
-.btn-upload-selected:hover:not(:disabled) { background: #764ba2; }
-
-.btn-upload-selected:disabled { background: #ccc; cursor: not-allowed; }
-
-/* Episodes Section */
-.episodes-section {
-flex: 1;
-display: flex;
-flex-direction: column;
-overflow: hidden;
-}
-
-.episodes-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 15px;
-padding-bottom: 10px;
-border-bottom: 2px solid #e0e0e0;
-}
-
-.episodes-header h3 {
-color: #333;
-font-size: 20px;
-margin: 0;
-}
-
-.episodes-controls {
-display: flex;
-gap: 10px;
-align-items: center;
-}
-
-.search-input {
-padding: 8px 12px;
-border: 2px solid #e0e0e0;
-border-radius: 6px;
-font-size: 14px;
-width: 200px;
-}
-
-.search-input:focus { outline: none; border-color: #667eea; }
-
-.btn-select {
-background: #e0e0e0;
-color: #333;
-border: none;
-padding: 8px 12px;
-border-radius: 6px;
-cursor: pointer;
-font-size: 13px;
-font-weight: 500;
-transition: background 0.3s;
-}
-
-.btn-select:hover { background: #d0d0d0; }
-
-/* Episodes List - Compact */
-.episodes-list-compact {
-flex: 1;
-overflow-y: auto;
-border: 2px solid #e0e0e0;
-border-radius: 8px;
-}
-
-.episode-compact {
-display: flex;
-align-items: center;
-padding: 12px 15px;
-border-bottom: 1px solid #e0e0e0;
-cursor: pointer;
-transition: background 0.2s;
-}
-
-.episode-compact:last-child { border-bottom: none; }
-
-.episode-compact:hover { background: #f8f9fa; }
-
-.episode-compact.selected {
-background: #f0f4ff;
-}
-
-.episode-checkbox {
-margin-right: 12px;
-cursor: pointer;
-width: 18px;
-height: 18px;
-}
-
-.episode-content {
-flex: 1;
-display: flex;
-flex-direction: column;
-gap: 4px;
-overflow: hidden;
-}
-
-.episode-title {
-font-weight: 500;
-color: #333;
-font-size: 14px;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-}
-
-.episode-meta {
-color: #999;
-font-size: 12px;
-}
-
-/* Playlists List - Compact */
-.playlists-list-compact {
-flex: 1;
-overflow-y: auto;
-}
-
-.playlist-compact {
-padding: 10px;
-margin-bottom: 8px;
-background: white;
-border: 2px solid #e0e0e0;
-border-radius: 6px;
-transition: all 0.3s;
-}
-
-.playlist-compact:hover { border-color: #667eea; }
-
-.playlist-title {
-display: block;
-font-weight: 500;
-color: #333;
-font-size: 14px;
-margin-bottom: 4px;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-}
-
-.playlist-id {
-display: block;
-color: #999;
-font-size: 11px;
-font-family: monospace;
-}
-
-/* States */
-.empty-state {
-text-align: center;
-padding: 60px 20px;
-color: #999;
-font-size: 16px;
-}
-
-.empty-state-small {
-text-align: center;
-padding: 20px;
-color: #999;
-font-size: 14px;
-}
-
-.loading-state {
-text-align: center;
-padding: 40px 20px;
-color: #666;
-font-size: 16px;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-.manager-layout {
-grid-template-columns: 1fr;
-grid-template-rows: auto 1fr auto;
-}
-
-.feeds-sidebar,
-.playlists-sidebar {
-max-height: 300px;
-}
-
-.upload-controls {
-flex-direction: column;
-align-items: stretch;
-}
-
-.playlist-selection {
-flex-direction: column;
-}
-
-.episodes-controls {
-flex-direction: column;
-align-items: stretch;
-}
-
-.search-input {
-width: 100%;
-}
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .btn-add-feed,
+  .btn-upload-selected,
+  .login-btn,
+  .logout-btn,
+  .btn-select,
+  .cancel-btn {
+    min-height: 44px;
+  }
+  
+  .episode-compact {
+    min-height: 50px;
+  }
+  
+  .feed-item {
+    min-height: 44px;
+  }
+  
+  .playlist-compact {
+    min-height: 44px;
+  }
+  
+  .btn-delete-feed {
+    min-width: 28px;
+    min-height: 28px;
+  }
 }
