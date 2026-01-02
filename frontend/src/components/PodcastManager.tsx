@@ -38,13 +38,13 @@ const safeSetStorage = (key: string, value: string) => {
   try {
     localStorage.setItem(key, value)
   } catch {
-    // Mobile Safari private mode / quota issues
+    // iOS Safari private mode / quota issues
   }
 }
 
 export default function PodcastManager({ accessToken }: PodcastManagerProps) {
   const [savedFeeds, setSavedFeeds] = useState<SavedFeed[]>([])
-  const [newFeedName, setNewFeedName] = useState('Circle Round')
+  const [newFeedName, setNewFeedName] = useState('')
   const [newFeedUrl, setNewFeedUrl] = useState('https://rss.wbur.org/circleround/podcast')
   const [selectedFeedId, setSelectedFeedId] = useState<string>('')
   const [currentFeed, setCurrentFeed] = useState<Feed | null>(null)
@@ -122,8 +122,10 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
         `/api/rss/feeds/parse?feed_url=${encodeURIComponent(feed.url)}`
       )
       if (!response.ok) throw new Error('Failed to load feed')
+
       const data = await response.json()
       setCurrentFeed(data.feed)
+
       if (!playlistName) {
         setPlaylistName(data.feed.title)
       }
@@ -136,20 +138,15 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
   }
 
   const toggleEpisode = (audioUrl: string) => {
-    const newSelected = new Set(selectedEpisodes)
-    if (newSelected.has(audioUrl)) {
-      newSelected.delete(audioUrl)
-    } else {
-      newSelected.add(audioUrl)
-    }
-    setSelectedEpisodes(newSelected)
+    const next = new Set(selectedEpisodes)
+    next.has(audioUrl) ? next.delete(audioUrl) : next.add(audioUrl)
+    setSelectedEpisodes(next)
   }
 
   const selectAll = () => {
     if (!currentFeed) return
-    const filtered = getFilteredEpisodes()
-    const allUrls = new Set(filtered.map(e => e.audio_url))
-    setSelectedEpisodes(allUrls)
+    const urls = new Set(getFilteredEpisodes().map(e => e.audio_url))
+    setSelectedEpisodes(urls)
   }
 
   const deselectAll = () => {
@@ -172,10 +169,11 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
       return
     }
 
-    const episodes = currentFeed?.episodes.filter(e => selectedEpisodes.has(e.audio_url)) || []
+    const episodes = currentFeed?.episodes.filter(e =>
+      selectedEpisodes.has(e.audio_url)
+    ) || []
 
     setUploading(true)
-    setMessage(null)
     setUploadProgress({ current: 0, total: episodes.length })
 
     let currentPlaylistId = useExistingPlaylist ? selectedPlaylistId : null
@@ -201,15 +199,17 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
           body: formData,
         })
 
-        if (!response.ok) throw new Error('Upload failed')
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status}`)
+        }
 
         const result = await response.json()
         const newPlaylistId = result.playlistId || result.cardId
         if (!currentPlaylistId && newPlaylistId) {
           currentPlaylistId = newPlaylistId
         }
-      } catch {
-        // handled below
+      } catch (error) {
+        console.error('Upload failed', error)
       }
     }
 
@@ -240,26 +240,22 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
 
           <div className="add-feed-form">
             <input
-              type="text"
-              placeholder="Feed name"
               value={newFeedName}
-              onChange={(e) => setNewFeedName(e.target.value)}
-              className="feed-input"
+              onChange={e => setNewFeedName(e.target.value)}
+              placeholder="Feed name"
             />
             <input
-              type="text"
-              placeholder="RSS URL"
               value={newFeedUrl}
-              onChange={(e) => setNewFeedUrl(e.target.value)}
-              className="feed-input"
+              onChange={e => setNewFeedUrl(e.target.value)}
+              placeholder="RSS URL"
             />
             <button
               type="button"
+              className="btn-add-feed"
               onClick={(e) => {
                 e.stopPropagation()
                 saveFeed()
               }}
-              className="btn-add-feed"
             >
               + Add Feed
             </button>
@@ -275,16 +271,15 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
                   className="feed-info"
                   onClick={() => loadFeed(feed.id)}
                 >
-                  <span className="feed-name">{feed.name}</span>
+                  {feed.name}
                 </div>
                 <button
                   type="button"
+                  className="btn-delete-feed"
                   onClick={(e) => {
                     e.stopPropagation()
                     deleteFeed(feed.id)
                   }}
-                  className="btn-delete-feed"
-                  title="Delete feed"
                 >
                   ×
                 </button>
@@ -293,8 +288,42 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
           </div>
         </div>
 
-        {/* --- remainder unchanged --- */}
-        {/* Main content + playlists sidebar exactly as before */}
+        <div className="main-content">
+          {!currentFeed ? (
+            <div className="empty-state">
+              Select a podcast feed from the sidebar
+            </div>
+          ) : (
+            <>
+              <div className="episodes-header">
+                <input
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search episodes..."
+                />
+                <button type="button" onClick={selectAll}>Select All</button>
+                <button type="button" onClick={deselectAll}>Deselect All</button>
+              </div>
+
+              <div className="episodes-list-compact">
+                {filteredEpisodes.map(ep => (
+                  <div
+                    key={ep.audio_url}
+                    className={`episode-compact ${selectedEpisodes.has(ep.audio_url) ? 'selected' : ''}`}
+                    onClick={() => toggleEpisode(ep.audio_url)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedEpisodes.has(ep.audio_url)}
+                      readOnly
+                    />
+                    <span>{ep.title}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
       </div>
     </div>
