@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Form
 from typing import Optional
 from services.rss_service import RSSService
+import hashlib
 from services.yoto_service import YotoService
 
 router = APIRouter()
@@ -38,6 +39,12 @@ async def upload_episode_from_feed(
     try:
         # Download audio from RSS feed
         audio_data = RSSService.download_episode(audio_url)
+        # Log debug info about the downloaded audio to help diagnose duplicate uploads
+        try:
+            audio_hash = hashlib.sha256(audio_data).hexdigest()
+            print(f"upload_episode_from_feed: track_title={title} audio_len={len(audio_data)} sha256={audio_hash}")
+        except Exception:
+            print("upload_episode_from_feed: failed to hash audio data")
         
         # Use playlist_name if provided, otherwise use episode title
         final_playlist_name = playlist_name if playlist_name else title
