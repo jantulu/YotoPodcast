@@ -228,67 +228,74 @@ class YotoService:
         chapter_index: int, 
         new_track: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Add a new track to an existing chapter in a playlist"""
+        """Backward-compatible wrapper: add a new episode (one chapter containing one track).
+
+        The Yoto firmware expects one track per chapter for episodic content.
+        This wrapper forwards to `add_episode_to_playlist` for the correct behavior.
+        """
+        # Ignore chapter_index and delegate to episode-based add
+        return self.add_episode_to_playlist(card_id, new_track)
+
+    def add_episode_to_playlist(
+        self,
+        card_id: str,
+        new_track: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Add a new episode to a Yoto playlist.
+
+        IMPORTANT: Yoto expects ONE track per chapter for episodic content.
+        """
         playlist = self.get_playlist_by_id(card_id)
         if not playlist:
             raise ValueError(f"Playlist with cardId {card_id} not found")
-        
-        # Get the card content, not the wrapper
-        card_data = playlist.get("card", playlist)
-        chapters = card_data.get("content", {}).get("chapters", [])
-        
-        print(f"Current playlist has {len(chapters)} chapter(s)")
-        if len(chapters) > 0:
-            print(f"Chapter 0 has {len(chapters[0].get('tracks', []))} track(s)")
-        
-        # Ensure chapter exists
-        if chapter_index >= len(chapters):
-            for i in range(len(chapters), chapter_index + 1):
-                chapters.append({
-                    "key": f"{i+1:02d}",
-                    "title": f"Chapter {i+1}",
-                    "overlayLabel": str(i+1),
-                    "tracks": [],
-                    "display": {
-                        "icon16x16": "yoto:#aUm9i3ex3qqAMYBv-i-O-pYMKuMJGICtR3Vhf289u2Q"
-                    }
-                })
-        
-        # CRITICAL: Get existing tracks from the correct chapter
-        existing_tracks = chapters[chapter_index].get("tracks", [])
-        new_track_num = len(existing_tracks) + 1
-        
-        print(f"Existing tracks in chapter {chapter_index}: {len(existing_tracks)}")
-        print(f"New track will be #{new_track_num}")
-        
-        # Create NEW dict with updated key
-        track_to_add = {
-            **new_track,
-            "key": f"{new_track_num:02d}",
-            "overlayLabel": str(new_track_num)
-        }
-        
-        print(f"Adding track #{new_track_num} with key '{track_to_add['key']}' to playlist {card_id}")
-        print(f"Track title: {track_to_add.get('title')}")
-        print(f"Track URL: {track_to_add.get('trackUrl', 'N/A')[:50]}...")
-        
-        # Avoid adding duplicate trackUrl entries
-        for idx, existing in enumerate(existing_tracks):
-            if existing.get("trackUrl") == track_to_add.get("trackUrl"):
-                print(f"add_track_to_playlist: track already exists in chapter {chapter_index} at index {idx}, skipping add")
-                # Return a normalized card response (no update needed)
-                return self._normalize_card_response({"card": card_data})
 
-        # Add track to chapter
-        print(f"add_track_to_playlist: chapters before update for card {card_id}:", chapters)
-        chapters[chapter_index]["tracks"].append(track_to_add)
-        print(f"add_track_to_playlist: chapters after append for card {card_id}:", chapters)
-        
-        # Get the correct title and metadata from the card
+        card_data = playlist.get("card", playlist)
+        content = card_data.get("content", {})
+        chapters = content.get("chapters", [])
+
+        print(f"Current playlist has {len(chapters)} chapter(s)")
+
+        # Deduplicate by trackUrl across ALL chapters
+        new_url = new_track.get("trackUrl")
+        for ch_idx, chapter in enumerate(chapters):
+            for tr_idx, track in enumerate(chapter.get("tracks", [])):
+                if track.get("trackUrl") == new_url:
+                    print(
+                        f"Episode already exists (chapter {ch_idx + 1}, track {tr_idx + 1}), skipping add"
+                    )
+                    return self._normalize_card_response({"card": card_data})
+
+        # Determine new chapter index
+        chapter_num = len(chapters) + 1
+
+        print(f"Adding new chapter #{chapter_num}")
+        print(f"Episode title: {new_track.get('title')}")
+        print(f"Track URL: {new_url[:50]}...")
+
+        new_chapter = {
+            "key": f"{chapter_num:02d}",
+            "title": new_track.get("title", f"Episode {chapter_num}"),
+            "overlayLabel": str(chapter_num),
+            "tracks": [
+                {
+                    **new_track,
+                    "key": "01",
+                    "overlayLabel": "1",
+                }
+            ],
+            "display": {
+                "icon16x16": "yoto:#aUm9i3ex3qqAMYBv-i-O-pYMKuMJGICtR3Vhf289u2Q"
+            }
+        }
+
+        print("Chapters before append:", len(chapters))
+        chapters.append(new_chapter)
+        print("Chapters after append:", len(chapters))
+
         playlist_title = card_data.get("title", "")
         playlist_metadata = card_data.get("metadata")
-        
-        # Update the playlist
+
         return self.update_existing_playlist(
             card_id=card_id,
             title=playlist_title,
