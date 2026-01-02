@@ -217,6 +217,13 @@ class YotoService:
         print(f"Track title: {track_to_add.get('title')}")
         print(f"Track URL: {track_to_add.get('trackUrl', 'N/A')[:50]}...")
         
+        # Avoid adding duplicate trackUrl entries
+        for idx, existing in enumerate(existing_tracks):
+            if existing.get("trackUrl") == track_to_add.get("trackUrl"):
+                print(f"add_track_to_playlist: track already exists in chapter {chapter_index} at index {idx}, skipping add")
+                # Return the current card data (no update needed)
+                return card_data
+
         # Add track to chapter
         chapters[chapter_index]["tracks"].append(track_to_add)
         
