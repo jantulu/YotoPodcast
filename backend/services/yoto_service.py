@@ -30,7 +30,10 @@ class YotoService:
             headers=self.headers
         )
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            print(f"get_playlist_by_id response structure: {list(data.keys())}")
+            # The API returns {"card": {...}} so we need to return the whole thing
+            return data
         return None
     
     def delete_playlist(self, card_id: str) -> bool:
@@ -175,7 +178,13 @@ class YotoService:
         if not playlist:
             raise ValueError(f"Playlist with cardId {card_id} not found")
         
-        chapters = playlist.get("content", {}).get("chapters", [])
+        # Get the card content, not the wrapper
+        card_data = playlist.get("card", playlist)
+        chapters = card_data.get("content", {}).get("chapters", [])
+        
+        print(f"Current playlist has {len(chapters)} chapter(s)")
+        if len(chapters) > 0:
+            print(f"Chapter 0 has {len(chapters[0].get('tracks', []))} track(s)")
         
         # Ensure chapter exists
         if chapter_index >= len(chapters):
@@ -190,11 +199,14 @@ class YotoService:
                     }
                 })
         
-        # CRITICAL FIX: Update track key based on existing tracks
+        # CRITICAL: Get existing tracks from the correct chapter
         existing_tracks = chapters[chapter_index].get("tracks", [])
         new_track_num = len(existing_tracks) + 1
         
-        # Create a NEW track dict with updated key (don't modify the passed-in track)
+        print(f"Existing tracks in chapter {chapter_index}: {len(existing_tracks)}")
+        print(f"New track will be #{new_track_num}")
+        
+        # Create NEW dict with updated key
         track_to_add = {
             **new_track,
             "key": f"{new_track_num:02d}",
@@ -203,16 +215,21 @@ class YotoService:
         
         print(f"Adding track #{new_track_num} with key '{track_to_add['key']}' to playlist {card_id}")
         print(f"Track title: {track_to_add.get('title')}")
+        print(f"Track URL: {track_to_add.get('trackUrl', 'N/A')[:50]}...")
         
         # Add track to chapter
         chapters[chapter_index]["tracks"].append(track_to_add)
         
+        # Get the correct title and metadata from the card
+        playlist_title = card_data.get("title", "")
+        playlist_metadata = card_data.get("metadata")
+        
         # Update the playlist
         return self.update_existing_playlist(
             card_id=card_id,
-            title=playlist.get("title", ""),
+            title=playlist_title,
             chapters=chapters,
-            metadata=playlist.get("metadata")
+            metadata=playlist_metadata
         )
     
     def upload_podcast_to_playlist(
