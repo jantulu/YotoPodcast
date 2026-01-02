@@ -258,12 +258,18 @@ class YotoService:
         
         # Step 1: Get upload URL
         upload_info = self.get_upload_url()
+        print(f"upload_podcast_to_playlist: obtained upload_info uploadId={upload_info.get('uploadId')} uploadUrl={upload_info.get('uploadUrl')[:60]}...")
         
         # Step 2: Upload audio file
         self.upload_audio_file(upload_info["uploadUrl"], audio_file)
         
         # Step 3: Wait for transcoding
         transcoded_data = self.wait_for_transcoding(upload_info["uploadId"])
+        try:
+            ts_sha = transcoded_data.get("transcodedSha256")
+            print(f"upload_podcast_to_playlist: transcoded sha={ts_sha}")
+        except Exception:
+            print("upload_podcast_to_playlist: failed to read transcoded sha")
         
         # Step 4: Create track object
         track = self.create_track_from_transcode(
@@ -271,11 +277,17 @@ class YotoService:
             track_key="01",
             title=track_title
         )
+        try:
+            print(f"upload_podcast_to_playlist: created track key={track.get('key')} title={track.get('title')} trackUrl={track.get('trackUrl')}")
+        except Exception:
+            print("upload_podcast_to_playlist: failed to log created track")
         
         # Step 5: Either update existing playlist or create new one
         if playlist_card_id:
+            print(f"upload_podcast_to_playlist: adding track to existing playlist cardId={playlist_card_id}")
             result = self.add_track_to_playlist(playlist_card_id, chapter_index, track)
         else:
+            print(f"upload_podcast_to_playlist: creating new playlist with title={podcast_title}")
             chapter = {
                 "key": "01",
                 "title": podcast_title,
