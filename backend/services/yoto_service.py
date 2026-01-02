@@ -159,11 +159,17 @@ class YotoService:
         if metadata:
             content["metadata"] = metadata
         
+        print("create_new_playlist: POST /content payload:", content)
         response = requests.post(
             f"{self.BASE_URL}/content",
             headers=self.headers,
             json=content
         )
+        print("create_new_playlist: response status:", response.status_code)
+        try:
+            print("create_new_playlist: response body:", response.json())
+        except Exception:
+            print("create_new_playlist: response text:", response.text)
         response.raise_for_status()
         return self._normalize_card_response(response.json())
     
@@ -190,11 +196,17 @@ class YotoService:
         if metadata:
             content["metadata"] = metadata
         
+        print(f"update_existing_playlist: POST /content card_id={card_id} payload:", content)
         response = requests.post(
             f"{self.BASE_URL}/content",
             headers=self.headers,
             json=content
         )
+        print("update_existing_playlist: response status:", response.status_code)
+        try:
+            print("update_existing_playlist: response body:", response.json())
+        except Exception:
+            print("update_existing_playlist: response text:", response.text)
         response.raise_for_status()
         return self._normalize_card_response(response.json())
     
@@ -256,7 +268,9 @@ class YotoService:
                 return self._normalize_card_response({"card": card_data})
 
         # Add track to chapter
+        print(f"add_track_to_playlist: chapters before update for card {card_id}:", chapters)
         chapters[chapter_index]["tracks"].append(track_to_add)
+        print(f"add_track_to_playlist: chapters after append for card {card_id}:", chapters)
         
         # Get the correct title and metadata from the card
         playlist_title = card_data.get("title", "")
