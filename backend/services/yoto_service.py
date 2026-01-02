@@ -316,8 +316,32 @@ class YotoService:
         # Ensure cardId is at top level of response
         if "card" in result and "cardId" in result["card"]:
             result["cardId"] = result["card"]["cardId"]
-        
+
+        # Verification: confirm the created trackUrl appears in the playlist returned by the API
+        try:
+            result_card_id = result.get("cardId") or (result.get("card") or {}).get("cardId")
+            verified = False
+            if result_card_id:
+                fetched = self.get_playlist_by_id(result_card_id)
+                # fetched may be wrapped under 'card'
+                card_obj = fetched.get("card") if isinstance(fetched, dict) and "card" in fetched else fetched
+                chapters = (card_obj or {}).get("content", {}).get("chapters", [])
+                for ch in chapters:
+                    for t in ch.get("tracks", []) or []:
+                        if t.get("trackUrl") == track.get("trackUrl"):
+                            verified = True
+                            break
+                    if verified:
+                        break
+            result["verified"] = verified
+            if verified:
+                print(f"upload_podcast_to_playlist: verification OK for cardId={result_card_id}")
+            else:
+                print(f"upload_podcast_to_playlist: verification FAILED for cardId={result_card_id} trackUrl={track.get('trackUrl')}")
+        except Exception as e:
+            print("upload_podcast_to_playlist: verification error:", str(e))
+
         print(f"Upload complete! CardID: {result.get('cardId')}")
         print("=" * 50)
-        
+
         return result
