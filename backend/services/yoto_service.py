@@ -17,19 +17,11 @@ class YotoService:
     def get_user_playlists(self) -> List[Dict[str, Any]]:
         """Fetch all user's MYO playlists"""
         response = requests.get(
-            f"{self.BASE_URL}/content/mine",
+            f"{self.BASE_URL}/content/myo",
             headers=self.headers
         )
         response.raise_for_status()
-        cards = response.json().get("cards", [])
-        # Normalize entries that may be wrapped in a top-level 'card' key
-        normalized = []
-        for c in cards:
-            if isinstance(c, dict) and "card" in c and isinstance(c["card"], dict):
-                normalized.append(c["card"])
-            else:
-                normalized.append(c)
-        return normalized
+        return response.json().get("cards", [])
     
     def get_playlist_by_id(self, card_id: str) -> Optional[Dict[str, Any]]:
         """Fetch a specific playlist by cardId"""
@@ -38,11 +30,7 @@ class YotoService:
             headers=self.headers
         )
         if response.status_code == 200:
-            data = response.json()
-            # Normalize responses that wrap the playlist in a top-level "card" key
-            if isinstance(data, dict) and "card" in data:
-                return data["card"]
-            return data
+            return response.json()
         return None
     
     def delete_playlist(self, card_id: str) -> bool:
@@ -186,14 +174,6 @@ class YotoService:
         playlist = self.get_playlist_by_id(card_id)
         if not playlist:
             raise ValueError(f"Playlist with cardId {card_id} not found")
-
-        # Debug logging: show playlist structure before modification
-        try:
-            print(f"add_track_to_playlist: fetched playlist cardId={card_id} title={playlist.get('title')}")
-            chapters_debug = playlist.get("content", {}).get("chapters", [])
-            print(f"add_track_to_playlist: existing chapters count={len(chapters_debug)}")
-        except Exception:
-            print("add_track_to_playlist: failed to log playlist debug info")
         
         chapters = playlist.get("content", {}).get("chapters", [])
         
@@ -210,28 +190,30 @@ class YotoService:
                     }
                 })
         
-        # Update track key based on existing tracks
+        # CRITICAL FIX: Update track key based on existing tracks
         existing_tracks = chapters[chapter_index].get("tracks", [])
         new_track_num = len(existing_tracks) + 1
-        new_track["key"] = f"{new_track_num:02d}"
-        new_track["overlayLabel"] = str(new_track_num)
+        
+        # Create a NEW track dict with updated key (don't modify the passed-in track)
+        track_to_add = {
+            **new_track,
+            "key": f"{new_track_num:02d}",
+            "overlayLabel": str(new_track_num)
+        }
+        
+        print(f"Adding track #{new_track_num} with key '{track_to_add['key']}' to playlist {card_id}")
+        print(f"Track title: {track_to_add.get('title')}")
         
         # Add track to chapter
-        chapters[chapter_index]["tracks"].append(new_track)
+        chapters[chapter_index]["tracks"].append(track_to_add)
         
         # Update the playlist
-        updated = self.update_existing_playlist(
+        return self.update_existing_playlist(
             card_id=card_id,
             title=playlist.get("title", ""),
             chapters=chapters,
             metadata=playlist.get("metadata")
         )
-        # Debug logging: show result cardId if present
-        try:
-            print(f"add_track_to_playlist: update result keys={list(updated.keys())}")
-        except Exception:
-            print("add_track_to_playlist: failed to log update result")
-        return updated
     
     def upload_podcast_to_playlist(
         self,
@@ -246,7 +228,7 @@ class YotoService:
         
         Args:
             audio_file: The audio file bytes
-            podcast_title: Title for the podcast/track
+            podcast_title: Title for the podcast/playlist
             playlist_card_id: If provided, adds to existing playlist. If None, creates new.
             chapter_index: Which chapter to add the track to (0-indexed)
             track_title: Title for the individual track (defaults to podcast_title)
@@ -256,43 +238,44 @@ class YotoService:
         """
         track_title = track_title or podcast_title
         
+        print(f"\n=== Starting upload for track: {track_title} ===")
+        print(f"Playlist title: {podcast_title}")
+        print(f"Target playlist ID: {playlist_card_id}")
+        
         # Step 1: Get upload URL
         upload_info = self.get_upload_url()
-        print(f"upload_podcast_to_playlist: obtained upload_info uploadId={upload_info.get('uploadId')} uploadUrl={upload_info.get('uploadUrl')[:60]}...")
+        print(f"Got upload URL: {upload_info['uploadId']}")
         
         # Step 2: Upload audio file
         self.upload_audio_file(upload_info["uploadUrl"], audio_file)
+        print("Audio uploaded, waiting for transcoding...")
         
         # Step 3: Wait for transcoding
         transcoded_data = self.wait_for_transcoding(upload_info["uploadId"])
-        try:
-            ts_sha = transcoded_data.get("transcodedSha256")
-            print(f"upload_podcast_to_playlist: transcoded sha={ts_sha}")
-        except Exception:
-            print("upload_podcast_to_playlist: failed to read transcoded sha")
+        print(f"Transcoding complete: {transcoded_data['transcodedSha256'][:10]}...")
         
-        # Step 4: Create track object
+        # Step 4: Create track object - DON'T set key yet, it will be set when adding to playlist
         track = self.create_track_from_transcode(
             transcoded_data,
-            track_key="01",
+            track_key="PLACEHOLDER",  # Will be replaced when adding to playlist
             title=track_title
         )
-        try:
-            print(f"upload_podcast_to_playlist: created track key={track.get('key')} title={track.get('title')} trackUrl={track.get('trackUrl')}")
-        except Exception:
-            print("upload_podcast_to_playlist: failed to log created track")
         
         # Step 5: Either update existing playlist or create new one
         if playlist_card_id:
-            print(f"upload_podcast_to_playlist: adding track to existing playlist cardId={playlist_card_id}")
+            print(f"Adding track to existing playlist: {playlist_card_id}")
             result = self.add_track_to_playlist(playlist_card_id, chapter_index, track)
         else:
-            print(f"upload_podcast_to_playlist: creating new playlist with title={podcast_title}")
+            print(f"Creating new playlist: {podcast_title}")
             chapter = {
                 "key": "01",
                 "title": podcast_title,
                 "overlayLabel": "1",
-                "tracks": [track],
+                "tracks": [{
+                    **track,
+                    "key": "01",  # First track in new playlist
+                    "overlayLabel": "1"
+                }],
                 "display": {
                     "icon16x16": "yoto:#aUm9i3ex3qqAMYBv-i-O-pYMKuMJGICtR3Vhf289u2Q"
                 }
@@ -316,5 +299,8 @@ class YotoService:
         # Ensure cardId is at top level of response
         if "card" in result and "cardId" in result["card"]:
             result["cardId"] = result["card"]["cardId"]
+        
+        print(f"Upload complete! CardID: {result.get('cardId')}")
+        print("=" * 50)
         
         return result
