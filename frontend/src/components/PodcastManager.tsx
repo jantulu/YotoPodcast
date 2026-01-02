@@ -153,11 +153,11 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
       return
     }
 
+    const episodes = currentFeed?.episodes.filter(e => selectedEpisodes.has(e.audio_url)) || []
+    
     setUploading(true)
     setMessage(null)
     setUploadProgress({ current: 0, total: episodes.length })
-
-    const episodes = currentFeed?.episodes.filter(e => selectedEpisodes.has(e.audio_url)) || []
     let successCount = 0
     let failCount = 0
     let currentPlaylistId = useExistingPlaylist ? selectedPlaylistId : null
