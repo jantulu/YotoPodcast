@@ -40,6 +40,8 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingEpisodes, setPendingEpisodes] = useState<Episode[] | null>(null)
 
   useEffect(() => {
     loadSavedFeeds()
@@ -137,26 +139,9 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
     setSelectedEpisodes(new Set())
   }
 
-  const uploadSelected = async () => {
-    if (selectedEpisodes.size === 0) {
-      setMessage({ type: 'error', text: 'Please select at least one episode' })
-      return
-    }
-
-    if (!useExistingPlaylist && !playlistName) {
-      setMessage({ type: 'error', text: 'Please enter a playlist name' })
-      return
-    }
-
-    if (useExistingPlaylist && !selectedPlaylistId) {
-      setMessage({ type: 'error', text: 'Please select a playlist' })
-      return
-    }
-
+  const performUpload = async (episodes: Episode[]) => {
     setUploading(true)
     setMessage(null)
-
-    const episodes = currentFeed?.episodes.filter(e => selectedEpisodes.has(e.audio_url)) || []
     setUploadProgress({ current: 0, total: episodes.length })
     let successCount = 0
     let failCount = 0
@@ -230,69 +215,129 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
     loadExistingPlaylists()
   }
 
-  const getFilteredEpisodes = () => {
-    if (!currentFeed) return []
-    if (!searchTerm) return currentFeed.episodes
-    
-    const term = searchTerm.toLowerCase()
-    return currentFeed.episodes.filter(e => 
-      e.title.toLowerCase().includes(term) || 
-      e.description.toLowerCase().includes(term)
-    )
-  }
+  const uploadSelected = async () => {
+    if (selectedEpisodes.size === 0) {
+      setMessage({ type: 'error', text: 'Please select at least one episode' })
+      return
+    }
 
-  const filteredEpisodes = getFilteredEpisodes()
+    if (!useExistingPlaylist && !playlistName) {
+      setMessage({ type: 'error', text: 'Please enter a playlist name' })
+      return
+    }
 
-  return (
-    <div className="podcast-manager">
-      <div className="manager-layout">
-        {/* Left Sidebar - Saved Feeds */}
-        <div className="feeds-sidebar">
-          <h3>Podcast Feeds</h3>
-          
-          <div className="add-feed-form">
-            <input
-              type="text"
-              placeholder="Feed name"
-              value={newFeedName}
-              onChange={(e) => setNewFeedName(e.target.value)}
-              className="feed-input"
-            />
-            <input
-              type="text"
-              placeholder="RSS URL"
-              value={newFeedUrl}
-              onChange={(e) => setNewFeedUrl(e.target.value)}
-              className="feed-input"
-            />
-            <button onClick={saveFeed} className="btn-add-feed">
-              + Add Feed
-            </button>
-          </div>
+    if (useExistingPlaylist && !selectedPlaylistId) {
+      setMessage({ type: 'error', text: 'Please select a playlist' })
+      return
+    }
 
-          <div className="saved-feeds-list">
-            {savedFeeds.map(feed => (
-              <div 
-                key={feed.id} 
-                className={`feed-item ${selectedFeedId === feed.id ? 'active' : ''}`}
-              >
-                <div 
-                  className="feed-info"
-                  onClick={() => loadFeed(feed.id)}
-                >
-                  <span className="feed-name">{feed.name}</span>
-                </div>
-                <button 
-                  onClick={() => deleteFeed(feed.id)}
-                  className="btn-delete-feed"
-                  title="Delete feed"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+    // Build list of episodes to upload and deduplicate by audio_url
+    let episodes = currentFeed?.episodes.filter((e: Episode) => selectedEpisodes.has(e.audio_url)) || []
+    const seen = new Set<string>()
+    episodes = episodes.filter(e => {
+      if (seen.has(e.audio_url)) return false
+      seen.add(e.audio_url)
+      return true
+    })
+
+    console.log('uploadSelected: uploading episodes (titles):', episodes.map(e => e.title))
+    console.log('uploadSelected: uploading episodes (audio_urls):', episodes.map(e => e.audio_url))
+    // Confirm with user before starting
+    const playlistLabel = useExistingPlaylist
+      ? `Existing playlist: ${playlistName} (ID: ${selectedPlaylistId})`
+      : `New playlist: ${playlistName}`
+
+    const confirmList = episodes.map(e => `- ${e.title}`).join('\n')
+    const confirmText = `Upload ${episodes.length} episode(s) to ${playlistLabel}?\n\n${confirmList}`
+
+    if (!window.confirm(confirmText)) {
+      setMessage({ type: 'error', text: 'Upload cancelled by user' })
+      return
+    }
+
+    setUploading(true)
+    setMessage(null)
+    setUploadProgress({ current: 0, total: episodes.length })
+    let successCount = 0
+    let failCount = 0
+    let currentPlaylistId = useExistingPlaylist ? selectedPlaylistId : null
+
+    console.log(`Starting upload of ${episodes.length} episodes`)
+    console.log(`Using existing playlist: ${useExistingPlaylist}`)
+    console.log(`Current playlist ID: ${currentPlaylistId}`)
+    console.log(`Playlist name: ${playlistName}`)
+
+    for (let i = 0; i < episodes.length; i++) {
+      const episode = episodes[i]
+      setUploadProgress({ current: i + 1, total: episodes.length })
+      console.log(`\n--- Uploading episode ${i + 1}/${episodes.length}: ${episode.title} ---`)
+      
+      try {
+        const formData = new FormData()
+        formData.append('audio_url', episode.audio_url)
+        formData.append('title', episode.title)
+        formData.append('access_token', accessToken)
+        
+        if (currentPlaylistId) {
+          console.log(`Adding to existing playlist: ${currentPlaylistId}`)
+          formData.append('playlist_card_id', currentPlaylistId)
+        } else if (!useExistingPlaylist && playlistName) {
+          console.log(`Creating new playlist with name: ${playlistName}`)
+          formData.append('playlist_name', playlistName)
+        }
+
+        const response = await fetch('/api/rss/feeds/upload-episode', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`Upload failed: ${errorText}`)
+          throw new Error(`Upload failed: ${response.status}`)
+        }
+        
+        const result = await response.json()
+        console.log('Upload response:', result)
+        
+        // Extract playlist ID from response
+        const newPlaylistId = result.playlistId || result.cardId
+        console.log(`Extracted playlist ID: ${newPlaylistId}`)
+        
+        // Use the returned playlist ID for subsequent uploads
+        if (!currentPlaylistId && newPlaylistId) {
+          // Build list of episodes to upload and deduplicate by audio_url
+          let episodes = currentFeed?.episodes.filter((e: Episode) => selectedEpisodes.has(e.audio_url)) || []
+          const seen = new Set<string>()
+          episodes = episodes.filter((e: Episode) => {
+            if (seen.has(e.audio_url)) return false
+            seen.add(e.audio_url)
+            return true
+          })
+
+          console.log('uploadSelected: uploading episodes (titles):', episodes.map(e => e.title))
+          console.log('uploadSelected: uploading episodes (audio_urls):', episodes.map(e => e.audio_url))
+
+          // Open confirmation modal with pending episodes
+          setPendingEpisodes(episodes)
+          setConfirmOpen(true)
+        }
+
+        const confirmUpload = async (confirm: boolean) => {
+          if (!confirm) {
+            setConfirmOpen(false)
+            setPendingEpisodes(null)
+            setMessage({ type: 'error', text: 'Upload cancelled by user' })
+            return
+          }
+
+          if (pendingEpisodes) {
+            setConfirmOpen(false)
+            const eps = pendingEpisodes
+            setPendingEpisodes(null)
+            await performUpload(eps)
+          }
+        }
 
         {/* Main Content Area */}
         <div className="main-content">
@@ -330,28 +375,28 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
                     </label>
                   </div>
 
-                  {!useExistingPlaylist ? (
-                    <input
-                      type="text"
-                      placeholder="Enter playlist name"
-                      value={playlistName}
-                      onChange={(e) => setPlaylistName(e.target.value)}
-                      className="playlist-input"
-                    />
-                  ) : (
+                  <input
+                    type="text"
+                    placeholder="Enter playlist name"
+                    value={playlistName}
+                    onChange={(e) => setPlaylistName(e.target.value)}
+                    className="playlist-input"
+                    disabled={useExistingPlaylist}
+                  />
+                  {useExistingPlaylist && (
                     <select
                       value={selectedPlaylistId}
                       onChange={(e) => {
                         const val = e.target.value
                         setSelectedPlaylistId(val)
                         setUseExistingPlaylist(true)
-                        const found = existingPlaylists.find(p => p.cardId === val)
+                        const found = existingPlaylists.find((p: any) => p.cardId === val)
                         if (found) setPlaylistName(found.title || '')
                       }}
                       className="playlist-select"
                     >
                       <option value="">-- Select Playlist --</option>
-                      {existingPlaylists.map(p => (
+                      {existingPlaylists.map((p: any) => (
                         <option key={p.cardId} value={p.cardId}>
                           {p.title}
                         </option>
@@ -449,6 +494,25 @@ export default function PodcastManager({ accessToken }: PodcastManagerProps) {
           </div>
         </div>
       </div>
+      {confirmOpen && (
+        <div style={{position: 'fixed', left:0,top:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
+          <div style={{background:'#fff',padding:20,borderRadius:8,maxWidth:600,width:'90%'}}>
+            <h3>Confirm Upload</h3>
+            <p>{useExistingPlaylist ? `Existing playlist: ${playlistName} (ID: ${selectedPlaylistId})` : `New playlist: ${playlistName}`}</p>
+            <div style={{maxHeight:200,overflow:'auto',marginBottom:12}}>
+              <ul>
+                {pendingEpisodes && pendingEpisodes.map((e, i) => (
+                  <li key={i}>{e.title}</li>
+                ))}
+              </ul>
+            </div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <button onClick={() => confirmUpload(false)} style={{padding:'8px 12px'}}>Cancel</button>
+              <button onClick={() => confirmUpload(true)} style={{padding:'8px 12px'}}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
