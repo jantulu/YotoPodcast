@@ -21,7 +21,38 @@ class YotoService:
             headers=self.headers
         )
         response.raise_for_status()
-        return response.json().get("cards", [])
+        # Normalize to list of card-wrapped items when possible
+        cards = response.json().get("cards", [])
+        return cards
+
+    def _normalize_card_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a consistent shape for card responses: {'card': {...}, 'cardId': '...'}
+
+        The Yoto API sometimes returns the card under a top-level 'card' key
+        and sometimes returns the card object directly. This helper normalizes
+        both cases to a predictable structure used by the rest of the service.
+        """
+        if not isinstance(data, dict):
+            return data
+
+        # If already normalized, return as-is
+        if "card" in data and "cardId" in data:
+            return data
+
+        # If API returned { 'card': { ... } }
+        if "card" in data and isinstance(data["card"], dict):
+            card = data["card"]
+            card_id = card.get("cardId") or card.get("_id")
+            return {"card": card, "cardId": card_id}
+
+        # If API returned the card object directly
+        if "cardId" in data or "_id" in data:
+            card = data
+            card_id = card.get("cardId") or card.get("_id")
+            return {"card": card, "cardId": card_id}
+
+        # Fallback: return unchanged
+        return data
     
     def get_playlist_by_id(self, card_id: str) -> Optional[Dict[str, Any]]:
         """Fetch a specific playlist by cardId"""
@@ -134,7 +165,7 @@ class YotoService:
             json=content
         )
         response.raise_for_status()
-        return response.json()
+        return self._normalize_card_response(response.json())
     
     def update_existing_playlist(
         self, 
@@ -165,7 +196,7 @@ class YotoService:
             json=content
         )
         response.raise_for_status()
-        return response.json()
+        return self._normalize_card_response(response.json())
     
     def add_track_to_playlist(
         self, 
@@ -221,8 +252,8 @@ class YotoService:
         for idx, existing in enumerate(existing_tracks):
             if existing.get("trackUrl") == track_to_add.get("trackUrl"):
                 print(f"add_track_to_playlist: track already exists in chapter {chapter_index} at index {idx}, skipping add")
-                # Return the current card data (no update needed)
-                return card_data
+                # Return a normalized card response (no update needed)
+                return self._normalize_card_response({"card": card_data})
 
         # Add track to chapter
         chapters[chapter_index]["tracks"].append(track_to_add)
@@ -321,8 +352,8 @@ class YotoService:
             )
         
         # Ensure cardId is at top level of response
-        if "card" in result and "cardId" in result["card"]:
-            result["cardId"] = result["card"]["cardId"]
+        # Normalize final result to a consistent card wrapper
+        result = self._normalize_card_response(result)
 
         # Verification: confirm the created trackUrl appears in the playlist returned by the API
         try:
