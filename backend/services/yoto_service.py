@@ -62,8 +62,12 @@ class YotoService:
         )
         if response.status_code == 200:
             data = response.json()
-            print(f"get_playlist_by_id response structure: {list(data.keys())}")
-            # The API returns {"card": {...}} so we need to return the whole thing
+            try:
+                print(f"get_playlist_by_id response structure: {list(data.keys())}")
+                print("get_playlist_by_id: full response:", data)
+            except Exception:
+                print("get_playlist_by_id: (failed to stringify response)")
+            # The API returns {"card": {...}} so return the whole thing
             return data
         return None
     
@@ -122,17 +126,25 @@ class YotoService:
     ) -> Dict[str, Any]:
         """Create a track object from transcoded audio data"""
         media_info = transcoded_data.get("transcodedInfo", {})
-        
+        # Include metadata to uniquely identify the uploaded media (helps UI/library)
+        transcoded_sha = transcoded_data.get("transcodedSha256")
+        metadata = {
+            "transcodedSha256": transcoded_sha,
+            "fileSize": media_info.get("fileSize")
+        }
+
         return {
             "key": track_key,
             "title": title,
-            "trackUrl": f"yoto:#{transcoded_data['transcodedSha256']}",
+            "trackUrl": f"yoto:#{transcoded_sha}",
             "duration": media_info.get("duration"),
             "fileSize": media_info.get("fileSize"),
             "channels": media_info.get("channels"),
             "format": media_info.get("format"),
             "type": "audio",
             "overlayLabel": track_key,
+            "externalId": transcoded_sha,
+            "metadata": metadata,
             "display": {
                 "icon16x16": "yoto:#aUm9i3ex3qqAMYBv-i-O-pYMKuMJGICtR3Vhf289u2Q"
             }
