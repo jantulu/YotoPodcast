@@ -17,7 +17,7 @@ class YotoService:
     def get_user_playlists(self) -> List[Dict[str, Any]]:
         """Fetch all user's MYO playlists"""
         response = requests.get(
-            f"{self.BASE_URL}/content/myo",
+            f"{self.BASE_URL}/content/mine",
             headers=self.headers
         )
         response.raise_for_status()
